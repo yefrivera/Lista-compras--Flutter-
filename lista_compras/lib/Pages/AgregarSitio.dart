@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'firebase_services.dart'; // Asegúrate de que esta ruta sea correcta
+import 'firebase_services.dart'; // Cambiar el import según tu estructura de archivos
 
 class NewSitioForm extends StatefulWidget {
   final Function(String) onSiteAdded;
 
-  const NewSitioForm({required this.onSiteAdded});
+  NewSitioForm({required this.onSiteAdded});
 
   @override
   _NewSitioFormState createState() => _NewSitioFormState();
@@ -24,15 +24,10 @@ class _NewSitioFormState extends State<NewSitioForm> {
   void _saveSite() {
     if (_formKey.currentState!.validate()) {
       String newSiteName = siteNameController.text;
-      saveSiteData(newSiteName).then((_) {
-        widget.onSiteAdded(newSiteName);
-        Navigator.pop(context);
-        siteNameController.clear();
-      }).catchError((error) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al guardar el sitio: $error')),
-        );
-      });
+      saveData(newSiteName);
+      widget.onSiteAdded(newSiteName);
+      Navigator.pop(context);
+      siteNameController.clear();
     }
   }
 
@@ -48,21 +43,21 @@ class _NewSitioFormState extends State<NewSitioForm> {
             TextFormField(
               controller: siteNameController,
               validator: _validateSiteName,
-              decoration: const InputDecoration(
-                labelText: 'Nombre del sitio',
+              decoration: InputDecoration(
+                labelText: 'Aquí el nombre del sitio',
                 border: OutlineInputBorder(),
               ),
             ),
-            const SizedBox(height: 16.0),
+            SizedBox(height: 16.0),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 ElevatedButton(
                   onPressed: _saveSite,
-                  child: const Text('Guardar'),
+                  child: Text('Guardar'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.purple,
                     foregroundColor: Colors.white,
+                    backgroundColor: Colors.purple,
                   ),
                 ),
                 ElevatedButton(
@@ -70,10 +65,9 @@ class _NewSitioFormState extends State<NewSitioForm> {
                     siteNameController.clear();
                     Navigator.pop(context);
                   },
-                  child: const Text('Cancelar'),
+                  child: Text('Cancelar'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
-                    foregroundColor: Colors.black,
                   ),
                 ),
               ],

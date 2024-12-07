@@ -1,145 +1,163 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'firebase_services.dart';
 
-class DuplicarListaForm extends StatefulWidget {
-  final String listaActual;
-  final String? idListaSeleccionada;
+class EditProductForm extends StatefulWidget {
+  final Map<String, dynamic> productToEdit;
+  final String idLista; // Añadido el parámetro idLista
 
-  DuplicarListaForm({required this.listaActual, this.idListaSeleccionada});
+  const EditProductForm({Key? key, required this.productToEdit, required this.idLista}) : super(key: key);
 
   @override
-  _DuplicarListaFormState createState() => _DuplicarListaFormState();
+  _EditProductFormState createState() => _EditProductFormState();
 }
 
-class _DuplicarListaFormState extends State<DuplicarListaForm> {
-  String nuevoNombreLista = '';
-  String? listaSeleccionada;
-  List<String> listasFromDatabase = [];
-  bool isButtonEnabled = false;
+class _EditProductFormState extends State<EditProductForm> {
+  final _formKey = GlobalKey<FormState>();
+  final _productController = TextEditingController();
+  String? _selectedSite;
+  List<String> _sites = [];
+  bool _loading = true;
+  bool _changesMade = false; // Bandera para controlar cambios realizados
 
   @override
   void initState() {
     super.initState();
-    cargarListasDesdeBaseDeDatos();
+    _productController.text = widget.productToEdit['producto'];
+    _selectedSite = widget.productToEdit['sitio'];
+    _loadSites();
   }
 
-  void cargarListasDesdeBaseDeDatos() async {
-    try {
-      QuerySnapshot querySnapshot =
-          await FirebaseFirestore.instance.collection('Listas').get();
-      List<String> nombresListas = [];
-      querySnapshot.docs.forEach((doc) {
-        nombresListas.add(doc['nombre']);
-      });
-      setState(() {
-        listasFromDatabase = nombresListas;
-      });
-    } catch (e) {
-      print('Error al cargar las listas desde la base de datos: $e');
+  // Función para cargar los sitios desde Firebase
+  void _loadSites() async {
+    List<String> sitios = await readData();
+    setState(() {
+      _sites = sitios;
+      _loading = false; // Indicar que se han cargado los datos
+    });
+  }
+
+  // Función para validar cambios antes de guardar
+  bool _validateChanges() {
+    if (_productController.text != widget.productToEdit['producto'] ||
+        _selectedSite != widget.productToEdit['sitio']) {
+      return true;
     }
+    return false;
   }
 
-  void duplicarLista(String? listaSeleccionada, String nuevoNombreLista) async {
-    try {
-      if (nuevoNombreLista.isNotEmpty && nuevoNombreLista.length >= 5) {
-        String nuevaListaId = FirebaseFirestore.instance.collection('Listas').doc().id;
-        Timestamp fechaRegistro = Timestamp.now();
-
-        await FirebaseFirestore.instance.collection('Listas').doc(nuevaListaId).set({
-          'id': nuevaListaId,
-          'nombre': nuevoNombreLista,
-          'fechaRegistro': fechaRegistro,
-        });
-
-        Navigator.pop(context, nuevoNombreLista); // Devolver el nombre de la lista creada
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Por favor, ingrese el nombre de la nueva lista'),
-        ));
-      }
-    } catch (e) {
-      print('Error al crear la nueva lista: $e');
-    }
-  }
-
-  String? validarNombreLista(String value) {
-    if (value.isEmpty) {
-      return 'Por favor, ingrese el nombre de la lista';
-    } else if (value.length < 5) {
-      return 'El nombre debe tener al menos 5 caracteres';
+  // Validador personalizado para el nombre del producto
+  String? _productNameValidator(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Por favor, ingrese el nombre del producto';
+    } else if (value.length < 3) {
+      return 'El nombre del producto debe tener al menos 3 caracteres';
     }
     return null;
   }
 
+  void _saveProduct() async {
+    if (!_validateChanges()) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('No se han realizado cambios'),
+      ));
+      return;
+    }
+
+    // Verifica si el nombre del producto y el sitio están seleccionados
+    if (_formKey.currentState!.validate() && _selectedSite != null) {
+      // Actualiza los datos en Firestore
+      await FirebaseFirestore.instance
+          .collection('Listas')
+          .doc(widget.idLista) // Usa idLista para especificar la lista
+          .collection('Productos')
+          .doc(widget.productToEdit['id'])
+          .update({
+        'producto': _productController.text,
+        'sitio': _selectedSite,
+      });
+
+      // Muestra un mensaje de éxito
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Producto actualizado exitosamente'),
+      ));
+
+      // Cierra el modal de edición
+      Navigator.pop(context);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text('Duplicar Lista'),
-      content: SingleChildScrollView(
-        child: Container(
-          width: MediaQuery.of(context).size.width * 0.8,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              DropdownButtonFormField<String>(
-                value: listaSeleccionada,
-                onChanged: (String? newValue) {
-                  setState(() {
-                    listaSeleccionada = newValue;
-                    isButtonEnabled = nuevoNombreLista.length >= 5;
-                  });
-                },
-                items: listasFromDatabase.map((String lista) {
-                  return DropdownMenuItem<String>(
-                    value: lista,
-                    child: Text(lista),
-                  );
-                }).toList(),
-                decoration: InputDecoration(
-                  labelText: 'Selecciona la lista a duplicar o deja vacío para crear nueva',
-                  border: OutlineInputBorder(),
-                ),
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: _loading
+          ? CircularProgressIndicator() // Mostrar indicador de carga mientras se cargan los sitios
+          : Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextFormField(
+                    controller: _productController,
+                    validator: _productNameValidator,
+                    onChanged: (value) {
+                      setState(() {
+                        _changesMade = true; // Marcar cambios al modificar el nombre del producto
+                      });
+                    },
+                    decoration: InputDecoration(
+                      labelText: 'Ingrese el nombre del producto',
+                      border: OutlineInputBorder(),
+                      errorStyle: TextStyle(color: Colors.red), // Estilo del mensaje de error
+                    ),
+                  ),
+                  SizedBox(height: 16.0),
+                  DropdownButtonFormField<String>(
+                    menuMaxHeight: 150,
+                    value: _selectedSite,
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        _selectedSite = newValue;
+                        _changesMade = true; // Marcar cambios al modificar el sitio seleccionado
+                      });
+                    },
+                    items: _sites.map((String site) {
+                      return DropdownMenuItem<String>(
+                        value: site,
+                        child: Text(site),
+                      );
+                    }).toList(),
+                    decoration: InputDecoration(
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  SizedBox(height: 16.0),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      ElevatedButton(
+                        onPressed: _saveProduct,
+                        child: Text('Guardar'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.purple,
+                          foregroundColor: Colors.white,
+                        ),
+                      ),
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                        child: Text('Cancelar'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
-              SizedBox(height: 16.0),
-              TextField(
-                onChanged: (value) {
-                  setState(() {
-                    nuevoNombreLista = value;
-                    isButtonEnabled = value.length >= 5;
-                  });
-                },
-                decoration: InputDecoration(
-                  labelText: 'Nombre de la nueva lista *',
-                  border: OutlineInputBorder(),
-                  errorText: nuevoNombreLista.isNotEmpty && nuevoNombreLista.length < 5
-                      ? 'El nombre debe tener al menos 5 caracteres'
-                      : null,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-      actions: <Widget>[
-        TextButton(
-          onPressed: () {
-            Navigator.pop(context);
-          },
-          child: Text('Cancelar'),
-        ),
-        ElevatedButton(
-          onPressed: isButtonEnabled
-              ? () {
-                  duplicarLista(widget.idListaSeleccionada, nuevoNombreLista);
-                }
-              : null,
-          child: Text('Duplicar'),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.purple,
-            foregroundColor: Colors.white,
-          ),
-        ),
-      ],
+            ),
     );
   }
 }

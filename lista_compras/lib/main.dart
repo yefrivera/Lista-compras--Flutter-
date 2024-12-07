@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'Pages/DuplicarLista.dart'; // Asegúrate de importar correctamente el archivo donde está definido DuplicarListaForm
-import 'Pages/firebase_services.dart';
+import 'Pages/ListaPorDentro.dart';
 import 'firebase_options.dart'; // Asegúrate de importar correctamente tus opciones de Firebase
 
 void main() async {

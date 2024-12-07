@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'firebase_services.dart'; // Asegúrate de importar este archivo
+import 'AgregarSitio.dart';
+import 'firebase_services.dart';
 
 class NewProductForm extends StatefulWidget {
   final String idLista;
 
-  const NewProductForm({required this.idLista});
+  NewProductForm({required this.idLista});
 
   @override
   _NewProductFormState createState() => _NewProductFormState();
@@ -23,15 +24,19 @@ class _NewProductFormState extends State<NewProductForm> {
     _loadSites();
   }
 
-  /// Carga los sitios desde Firebase
   void _loadSites() async {
-    List<String> sitios = await fetchSites();
+    List<String> sitios = await readData();
     setState(() {
       _sites = sitios;
     });
   }
 
-  /// Guarda el producto en Firebase
+  void _addSiteToList(String newSiteName) {
+    setState(() {
+      _sites.add(newSiteName);
+    });
+  }
+
   void _saveProduct() async {
     if (_formKey.currentState!.validate()) {
       String productName = _productController.text;
@@ -68,42 +73,90 @@ class _NewProductFormState extends State<NewProductForm> {
               validator: (value) {
                 if (value == null || value.isEmpty) {
                   return 'Por favor, ingrese el nombre del producto';
+                } else if (value.length < 3) {
+                  return 'El nombre del producto debe tener al menos 3 caracteres';
                 }
                 return null;
               },
               decoration: const InputDecoration(
-                labelText: 'Nombre del producto',
+                labelText: 'Ingrese el nombre del producto',
                 border: OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 16.0),
-            DropdownButtonFormField<String>(
-              value: _selectedSite,
-              items: _sites.map((site) {
-                return DropdownMenuItem(
-                  value: site,
-                  child: Text(site),
-                );
-              }).toList(),
-              hint: const Text('Seleccionar sitio'),
-              onChanged: (value) {
-                setState(() {
-                  _selectedSite = value;
-                });
-              },
-              validator: (value) => value == null ? 'Seleccione un sitio' : null,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-              ),
+            Row(
+              children: [
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    menuMaxHeight: 150,
+                    value: _selectedSite,
+                    validator: (value) {
+                      if (value == null) {
+                        return 'Por favor, seleccione un sitio';
+                      }
+                      return null;
+                    },
+                    hint: Text('Seleccionar sitio...'),
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        _selectedSite = newValue;
+                      });
+                    },
+                    items: _sites.map((String site) {
+                      return DropdownMenuItem<String>(
+                        value: site,
+                        child: Text(site),
+                      );
+                    }).toList(),
+                    decoration: InputDecoration(
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+                SizedBox(width: 8.0),
+                ElevatedButton(
+                  onPressed: () {
+                    showModalBottomSheet(
+                      context: context,
+                      builder: (context) => Scaffold(
+                        appBar: AppBar(title: Text('Nuevo Sitio')),
+                        body: NewSitioForm(
+                          onSiteAdded: _addSiteToList,
+                        ),
+                      ),
+                    );
+                  },
+                  child: Text('+'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.purple,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 16.0),
-            ElevatedButton(
-              onPressed: _saveProduct,
-              child: const Text('Guardar'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.purple,
-                foregroundColor: Colors.white,
-              ),
+            SizedBox(height: 16.0),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                ElevatedButton(
+                  onPressed: _saveProduct,
+                  child: Text('Guardar'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.purple,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: Text('Cancelar'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.black, // Cambia el color del texto a negro para que sea visible
+                  ),
+                ),
+              ],
             ),
           ],
         ),
