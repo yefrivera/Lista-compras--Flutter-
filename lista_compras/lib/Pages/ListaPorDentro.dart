@@ -22,7 +22,7 @@ class _MyHomePageState extends State<MyHomePage> {
     _loadProducts();
   }
 
-  void _loadProducts() async {
+  void _loadProducts() {
     FirebaseFirestore.instance
         .collection('Listas')
         .doc(widget.idLista)
@@ -45,9 +45,7 @@ class _MyHomePageState extends State<MyHomePage> {
         .doc(widget.idLista)
         .collection('Productos')
         .doc(id)
-        .update({
-      'comprado': !currentValue,
-    });
+        .update({'comprado': !currentValue});
   }
 
   void _deleteProduct(String id, bool comprado) async {
@@ -60,12 +58,12 @@ class _MyHomePageState extends State<MyHomePage> {
           .delete();
     } else {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Ya has marcado el producto como comprado.'),
+        content: Text('No puedes eliminar un producto ya comprado.'),
       ));
     }
   }
 
- void _editProduct(Map<String, dynamic> product) {
+  void _editProduct(Map<String, dynamic> product) {
     showDialog(
       context: context,
       builder: (context) => EditProductForm(
@@ -79,153 +77,99 @@ class _MyHomePageState extends State<MyHomePage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)), // Bordes redondeados
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         content: SingleChildScrollView(
-          child: NewProductForm(idLista: widget.idLista), // Llamar al formulario correctamente
+          child: NewProductForm(idLista: widget.idLista),
         ),
       ),
     );
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Padding(
-          padding: const EdgeInsets.only(left: 95.0), // Desplazar título hacia la izquierda
-          child: Text(
-            widget.title,
-            style: TextStyle(
-              color: Colors.indigo, // Texto índigo
-              fontWeight: FontWeight.bold,
-              fontSize: 20,
-            ),
+        title: Text(
+          widget.title,
+          style: const TextStyle(
+            color: Colors.indigo,
+            fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: Colors.white, // Fondo blanco
-        elevation: 0, // Sin sombra
+        backgroundColor: Colors.white,
+        elevation: 0,
       ),
       body: Column(
         children: [
-          // Línea divisoria debajo del AppBar
           Container(
             height: 1,
-            decoration: BoxDecoration(
-              color: Colors.grey[300], // Línea gris clara
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey,
-                  blurRadius: 5,
-                  offset: Offset(0, 2),
-                ),
-              ],
-            ),
+            color: Colors.grey[300],
           ),
-          // Contenido principal
           Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  Container(
-                    width: MediaQuery.of(context).size.width,
-                    child: DataTable(
-                      columnSpacing: 15.0,
-                      headingRowColor: MaterialStateColor.resolveWith(
-                          (states) => Colors.indigo), // Fondo índigo para encabezados
-                      headingTextStyle: const TextStyle(
-                        color: Colors.white, // Texto blanco en encabezado
-                        fontWeight: FontWeight.bold,
+            child: ListView.builder(
+              itemCount: _products.length,
+              itemBuilder: (context, index) {
+                final product = _products[index];
+                return Dismissible(
+                  key: Key(product['id']),
+                  direction: DismissDirection.endToStart,
+                  confirmDismiss: (direction) async {
+                    if (product['comprado'] ?? false) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('No puedes eliminar un producto ya comprado.'),
+                        ),
+                      );
+                      return false;
+                    }
+                    return true;
+                  },
+                  onDismissed: (direction) {
+                    _deleteProduct(product['id'], product['comprado'] ?? false);
+                  },
+                  background: Container(
+                    color: Colors.red,
+                    alignment: Alignment.centerRight,
+                    padding: const EdgeInsets.only(right: 20),
+                    child: const Icon(Icons.delete, color: Colors.white),
+                  ),
+                  child: ListTile(
+                    title: GestureDetector(
+                      onDoubleTap: () => _togglePurchased(
+                          product['id'], product['comprado'] ?? false),
+                      child: Text(
+                        'Producto: ${product['producto']}',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          decoration: (product['comprado'] ?? false)
+                              ? TextDecoration.lineThrough
+                              : null,
+                        ),
                       ),
-                      dividerThickness: 0.5, // Grosor de los bordes internos
-                      dataRowColor: MaterialStateProperty.resolveWith(
-                          (states) => Colors.white),
-                      dataRowHeight: 60,
-                      columns: const <DataColumn>[
-                        // Orden de columnas: Editar - Producto - Sitio - Eliminar
-                        DataColumn(
-                          label: Text('Editar'),
-                        ),
-                        DataColumn(
-                          label: Text('Producto'),
-                        ),
-                        DataColumn(
-                          label: Text('Sitio'),
-                        ),
-                        DataColumn(
-                          label: Text('Eliminar'),
-                        ),
-                      ],
-                      rows: _products.map((product) {
-                        return DataRow(
-                          cells: <DataCell>[
-                            // Columna Editar
-                            DataCell(
-                              IconButton(
-                                onPressed: () => _editProduct(product),
-                                icon: Icon(Icons.edit),
-                                color: Colors.indigo, // Color del icono
-                              ),
-                            ),
-                            // Columna Producto
-                            DataCell(
-                              GestureDetector(
-                                onDoubleTap: () => _togglePurchased(
-                                    product['id'], product['comprado'] ?? false),
-                                child: Text(
-                                  product['producto'] ?? '',
-                                  style: TextStyle(
-                                    color: Colors.black,
-                                    decoration: (product['comprado'] ?? false)
-                                        ? TextDecoration.lineThrough
-                                        : null,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            // Columna Sitio
-                            DataCell(
-                              GestureDetector(
-                                onDoubleTap: () => _togglePurchased(
-                                    product['id'], product['comprado'] ?? false),
-                                child: Text(
-                                  product['sitio'] ?? '',
-                                  style: TextStyle(
-                                    color: Colors.black,
-                                    decoration: (product['comprado'] ?? false)
-                                        ? TextDecoration.lineThrough
-                                        : null,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            // Columna Eliminar
-                            DataCell(
-                              IconButton(
-                                onPressed: () => _deleteProduct(
-                                    product['id'], product['comprado'] ?? false),
-                                icon: Icon(Icons.delete),
-                                color: Colors.red[300], // Color del icono
-                              ),
-                            ),
-                          ],
-                        );
-                      }).toList(),
+                    ),
+                    subtitle: GestureDetector(
+                      onDoubleTap: () => _togglePurchased(
+                          product['id'], product['comprado'] ?? false),
+                      child: Text("Tienda: ${product['sitio']}"),
+                    ),
+                    trailing: IconButton(
+                      onPressed: () => _editProduct(product),
+                      icon: const Icon(Icons.edit, color: Colors.indigo),
                     ),
                   ),
-                ],
-              ),
+                );
+              },
             ),
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: _addNewProduct, // Cambiado para usar el AlertDialog
+        onPressed: _addNewProduct,
         tooltip: 'Añadir',
         icon: const Icon(Icons.add),
-        label: const Text('Añadir'), // Texto "Añadir" en el botón
-        backgroundColor: Colors.indigo[50], // Fondo blanco
-        foregroundColor: Colors.indigo, // Texto e icono en índigo
+        label: const Text('Añadir'),
+        backgroundColor: Colors.indigo[50],
+        foregroundColor: Colors.indigo,
       ),
     );
   }
