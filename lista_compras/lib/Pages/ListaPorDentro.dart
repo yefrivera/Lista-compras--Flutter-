@@ -94,14 +94,14 @@ class _MyHomePageState extends State<MyHomePage> {
               child: DataTable(
                 columnSpacing: 15.0, // Espaciado entre columnas
                 headingRowColor: MaterialStateColor.resolveWith(
-                    (states) => Colors.purple.shade100),
+                    (states) => Colors.blue.shade100),
                 columns: const <DataColumn>[
                   DataColumn(
                     label: Text(
                       'Producto',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: Colors.purple, // Color del texto del encabezado
+                        color: Colors.indigo, // Color del texto del encabezado
                       ),
                     ),
                   ),
@@ -110,7 +110,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       'Sitio',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: Colors.purple, // Color del texto del encabezado
+                        color: Colors.blue, // Color del texto del encabezado
                       ),
                     ),
                   ),
@@ -119,7 +119,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       'Acciones',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: Colors.purple, // Color del texto del encabezado
+                        color: Colors.blue, // Color del texto del encabezado
                       ),
                     ),
                   ),
@@ -134,7 +134,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           child: Text(
                             product['producto'] ?? '',
                             style: TextStyle(
-                              color: Colors.purple, // Color del texto
+                              color: Colors.blue, // Color del texto
                               decoration: (product['comprado'] ?? false)
                                   ? TextDecoration.lineThrough
                                   : null,
@@ -149,7 +149,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           child: Text(
                             product['sitio'] ?? '',
                             style: TextStyle(
-                              color: Colors.purple, // Color del texto
+                              color: Colors.blue, // Color del texto
                               decoration: (product['comprado'] ?? false)
                                   ? TextDecoration.lineThrough
                                   : null,
@@ -171,7 +171,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                 onPressed: () => _deleteProduct(
                                     product['id'], product['comprado'] ?? false),
                                 icon: Icon(Icons.delete),
-                                color: Colors.red, // Color del icono
+                                color: Colors.red[300], // Color del icono
                               ),
                           ],
                         ),
@@ -196,7 +196,7 @@ class _MyHomePageState extends State<MyHomePage> {
         },
         tooltip: 'Añadir',
         child: const Icon(Icons.add),
-        backgroundColor: Colors.purple, // Color del FAB
+        backgroundColor: Colors.blue, // Color del FAB
       ),
     );
   }

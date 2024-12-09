@@ -128,7 +128,7 @@ class _NewProductFormState extends State<NewProductForm> {
                   },
                   child: Text('+'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.purple,
+                    backgroundColor: Colors.blue,
                     foregroundColor: Colors.white,
                   ),
                 ),
@@ -142,7 +142,7 @@ class _NewProductFormState extends State<NewProductForm> {
                   onPressed: _saveProduct,
                   child: Text('Guardar'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.purple,
+                    backgroundColor: Colors.indigo,
                     foregroundColor: Colors.white,
                   ),
                 ),

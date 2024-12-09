@@ -57,7 +57,7 @@ class _NewSitioFormState extends State<NewSitioForm> {
                   child: Text('Guardar'),
                   style: ElevatedButton.styleFrom(
                     foregroundColor: Colors.white,
-                    backgroundColor: Colors.purple,
+                    backgroundColor: Colors.blue,
                   ),
                 ),
                 ElevatedButton(

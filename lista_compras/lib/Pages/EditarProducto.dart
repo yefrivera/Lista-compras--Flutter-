@@ -103,13 +103,13 @@ class _EditProductFormState extends State<EditProductForm> {
                     validator: _productNameValidator,
                     onChanged: (value) {
                       setState(() {
-                        _changesMade = true; // Marcar cambios al modificar el nombre del producto
+                        _changesMade = true; 
                       });
                     },
                     decoration: InputDecoration(
                       labelText: 'Ingrese el nombre del producto',
                       border: OutlineInputBorder(),
-                      errorStyle: TextStyle(color: Colors.red), // Estilo del mensaje de error
+                      errorStyle: TextStyle(color: Colors.red[400]), 
                     ),
                   ),
                   SizedBox(height: 16.0),
@@ -140,7 +140,7 @@ class _EditProductFormState extends State<EditProductForm> {
                         onPressed: _saveProduct,
                         child: Text('Guardar'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.purple,
+                          backgroundColor: Colors.blue,
                           foregroundColor: Colors.white,
                         ),
                       ),

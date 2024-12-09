@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'Pages/DuplicarLista.dart'; // Asegúrate de importar correctamente el archivo donde está definido DuplicarListaForm
+import 'Pages/DuplicarLista.dart'; 
 import 'Pages/ListaPorDentro.dart';
-import 'firebase_options.dart'; // Asegúrate de importar correctamente tus opciones de Firebase
+import 'firebase_options.dart'; 
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,11 +19,11 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       theme: ThemeData(
-        primarySwatch: Colors.purple,
+        primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
       home: ListaScreen(),
-    );
+    );       
   }
 }
 
@@ -34,7 +34,7 @@ class ListaScreen extends StatefulWidget {
 
 class _ListaScreenState extends State<ListaScreen> {
   List<String> listas = [];
-  List<String> idListas = []; // Añadido para almacenar los IDs de las listas
+  List<String> idListas = []; 
   int? hoveredIndex;
 
   @override
@@ -51,7 +51,7 @@ class _ListaScreenState extends State<ListaScreen> {
 
       querySnapshot.docs.forEach((doc) {
         nombresListas.add(doc['nombre']);
-        idsListas.add(doc.id); // Agregar el ID del documento a la lista de IDs
+        idsListas.add(doc.id); 
       });
 
       setState(() {
@@ -59,8 +59,8 @@ class _ListaScreenState extends State<ListaScreen> {
         idListas = idsListas;
       });
     } catch (e) {
-      print('Error al cargar las listas desde Firestore: $e');
-      // Manejar el error según sea necesario
+      print('Error desde Firestore: $e');
+      
     }
   }
 
@@ -68,12 +68,12 @@ class _ListaScreenState extends State<ListaScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => MyHomePage(title: listName, idLista: idLista), // Navega a MyHomePage con el título y idLista
+        builder: (context) => MyHomePage(title: listName, idLista: idLista), 
       ),
     );
   }
 
-  // Función para mostrar el formulario de duplicar lista
+  // Formulario de duplicar lista
 void mostrarFormularioDuplicarLista() async {
   String? nuevoNombreLista = await showDialog<String>(
     context: context,
@@ -87,8 +87,8 @@ void mostrarFormularioDuplicarLista() async {
 
   if (nuevoNombreLista != null) {
     setState(() {
-      listas.add(nuevoNombreLista); // Agregar la nueva lista
-      idListas.add("nuevoID"); // Deberías ajustar cómo generas el nuevo ID
+      listas.add(nuevoNombreLista); 
+      idListas.add("nuevoID"); 
     });
   }
 }
@@ -97,81 +97,127 @@ void mostrarFormularioDuplicarLista() async {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Listas de compras'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            Expanded(
-              child: ListView.builder(
-                itemCount: listas.length,
-                itemBuilder: (context, index) {
-                  return MouseRegion(
-                    onEnter: (_) {
-                      setState(() {
-                        hoveredIndex = index;
-                      });
-                    },
-                    onExit: (_) {
-                      setState(() {
-                        hoveredIndex = null;
-                      });
-                    },
-                    child: GestureDetector(
-                      onTap: () => navigateToList(context, listas[index], idListas[index]), // Pasar idLista al navegar
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(vertical: 8.0),
-                        padding: const EdgeInsets.all(16.0),
-                        decoration: BoxDecoration(
-                          color: hoveredIndex == index ? Colors.purple[100] : Colors.purple[50],
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black12,
-                              blurRadius: 8,
-                              offset: Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              listas[index],
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.purple[800],
-                              ),
-                            ),
-                            Icon(
-                              Icons.arrow_forward_ios,
-                              color: Colors.purple[800],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-            ElevatedButton(
-              onPressed: mostrarFormularioDuplicarLista, // Llama a la función que muestra el formulario
-              style: ElevatedButton.styleFrom(
-                foregroundColor: Colors.white,
-                backgroundColor: Colors.purple, // Text color
-                padding: EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+        title: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'PocketList',
+                style: TextStyle(
+                  fontSize: 24, 
+                  fontWeight: FontWeight.bold, 
                 ),
               ),
-              child: Text('Duplicar lista'),
-            ),
-          ],
+              Text(
+                'Mis listas de compras',
+                style: TextStyle(
+                  fontSize: 16, 
+                  fontStyle: FontStyle.italic, 
+                ),
+              ),
+            ],
+          ),
         ),
       ),
+      body: Column(
+        children: [
+          // Línea divisoria debajo del AppBar
+          Container(
+            height: 1, // Altura de la línea
+            decoration: BoxDecoration(
+              color: Colors.grey[300], // Color gris claro
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black12, // Sombras ligeras
+                  blurRadius: 6,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+          ),
+          // Contenido principal
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(30.0),
+              child: Column(
+                children: [
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: listas.length,
+                      itemBuilder: (context, index) {
+                        return MouseRegion(
+                          onEnter: (_) {
+                            setState(() {
+                              hoveredIndex = index;
+                            });
+                          },
+                          onExit: (_) {
+                            setState(() {
+                              hoveredIndex = null;
+                            });
+                          },
+                          child: GestureDetector(
+                            onTap: () => navigateToList(context, listas[index], idListas[index]), 
+                            child: Container(
+                              margin: const EdgeInsets.symmetric(vertical: 10.0),
+                              padding: const EdgeInsets.all(25.0),
+                              decoration: BoxDecoration(
+                                color: hoveredIndex == index ? Colors.blue[50] : Colors.blueGrey[50],
+                                borderRadius: BorderRadius.circular(10),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black12,
+                                    blurRadius: 12,
+                                    offset: Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    listas[index],
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.blue[800],
+                                    ),
+                                  ),
+                                  Icon(
+                                    Icons.arrow_forward_ios,
+                                    color: Colors.blue[800],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  ElevatedButton.icon(
+                    onPressed: mostrarFormularioDuplicarLista, 
+                    icon: Icon(
+                      Icons.add,
+                      color: Colors.white,
+                    ),
+                    label: Text('Crear o Duplicar'),
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      backgroundColor: Colors.blue[800],
+                      padding: EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+
     );
   }
 }

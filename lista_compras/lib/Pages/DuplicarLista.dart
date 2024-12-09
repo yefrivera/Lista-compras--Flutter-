@@ -35,7 +35,7 @@ class _DuplicarListaFormState extends State<DuplicarListaForm> {
         listasFromDatabase = nombresListas;
       });
     } catch (e) {
-      print('Error al cargar las listas desde la base de datos: $e');
+      print('Error de Firestore: $e');
     }
   }
 
@@ -54,7 +54,7 @@ class _DuplicarListaFormState extends State<DuplicarListaForm> {
         Navigator.pop(context, nuevoNombreLista); // Devolver el nombre de la lista creada
       } else {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Por favor, ingrese el nombre de la nueva lista'),
+          content: Text('Ingrese el nombre de la nueva lista'),
         ));
       }
     } catch (e) {
@@ -64,7 +64,7 @@ class _DuplicarListaFormState extends State<DuplicarListaForm> {
 
   String? validarNombreLista(String value) {
     if (value.isEmpty) {
-      return 'Por favor, ingrese el nombre de la lista';
+      return 'Ingrese el nombre de la lista';
     } else if (value.length < 5) {
       return 'El nombre debe tener al menos 5 caracteres';
     }
@@ -74,7 +74,7 @@ class _DuplicarListaFormState extends State<DuplicarListaForm> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text('Duplicar Lista'),
+      title: Text('Crear o Duplicar Lista'),
       content: SingleChildScrollView(
         child: Container(
           width: MediaQuery.of(context).size.width * 0.8,
@@ -96,7 +96,7 @@ class _DuplicarListaFormState extends State<DuplicarListaForm> {
                   );
                 }).toList(),
                 decoration: InputDecoration(
-                  labelText: 'Selecciona la lista a duplicar o deja vacío para crear nueva',
+                  labelText: 'Seleccione la lista que desea duplicar',
                   border: OutlineInputBorder(),
                 ),
               ),
@@ -109,7 +109,7 @@ class _DuplicarListaFormState extends State<DuplicarListaForm> {
                   });
                 },
                 decoration: InputDecoration(
-                  labelText: 'Nombre de la nueva lista *',
+                  labelText: 'Nombre de la nueva lista',
                   border: OutlineInputBorder(),
                   errorText: nuevoNombreLista.isNotEmpty && nuevoNombreLista.length < 5
                       ? 'El nombre debe tener al menos 5 caracteres'
@@ -135,7 +135,7 @@ class _DuplicarListaFormState extends State<DuplicarListaForm> {
               : null,
           child: Text('Duplicar'),
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.purple,
+            backgroundColor: Colors.indigo,
             foregroundColor: Colors.white,
           ),
         ),
