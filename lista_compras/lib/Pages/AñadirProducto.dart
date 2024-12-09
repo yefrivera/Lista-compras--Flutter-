@@ -161,13 +161,10 @@ class _NewProductFormState extends State<NewProductForm> {
                 // Botón de "Nuevo sitio" debajo del selector
                 ElevatedButton.icon(
                   onPressed: () {
-                    showModalBottomSheet(
+                    showDialog(
                       context: context,
-                      builder: (context) => Scaffold(
-                        appBar: AppBar(title: Text('Nuevo Sitio')),
-                        body: NewSitioForm(
-                          onSiteAdded: _addSiteToList,
-                        ),
+                      builder: (context) => NewSitioForm(
+                        onSiteAdded: _addSiteToList, // Callback para actualizar la lista de sitios
                       ),
                     );
                   },
@@ -178,6 +175,7 @@ class _NewProductFormState extends State<NewProductForm> {
                     foregroundColor: Colors.white,
                   ),
                 ),
+
                 SizedBox(height: 32.0), // Mayor separación entre selector y botones
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,

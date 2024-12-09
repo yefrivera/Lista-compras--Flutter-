@@ -191,12 +191,12 @@ class _ListaScreenState extends State<ListaScreen> {
                                     style: TextStyle(
                                       fontSize: 18,
                                       fontWeight: FontWeight.bold,
-                                      color: Colors.black,
+                                      color: Colors.indigo,
                                     ),
                                   ),
                                   Icon(
                                     Icons.arrow_forward_ios, // Flecha para indicar navegación
-                                    color: Colors.black,
+                                    color: Colors.indigo,
                                   ),
                                 ],
                               ),

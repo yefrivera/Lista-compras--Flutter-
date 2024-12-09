@@ -65,15 +65,16 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  void _editProduct(Map<String, dynamic> product) {
-    showModalBottomSheet(
+ void _editProduct(Map<String, dynamic> product) {
+    showDialog(
       context: context,
-      builder: (context) => Scaffold(
-        appBar: AppBar(title: Text('Editar Producto')),
-        body: EditProductForm(productToEdit: product, idLista: widget.idLista),
+      builder: (context) => EditProductForm(
+        productToEdit: product,
+        idLista: widget.idLista,
       ),
     );
   }
+
   void _addNewProduct() {
     showDialog(
       context: context,

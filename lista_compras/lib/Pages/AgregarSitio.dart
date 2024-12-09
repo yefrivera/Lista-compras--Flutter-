@@ -24,57 +24,74 @@ class _NewSitioFormState extends State<NewSitioForm> {
   void _saveSite() {
     if (_formKey.currentState!.validate()) {
       String newSiteName = siteNameController.text;
-      saveData(newSiteName);
-      widget.onSiteAdded(newSiteName);
-      Navigator.pop(context);
-      siteNameController.clear();
+      saveData(newSiteName); // Guardar el dato usando tu lógica
+      widget.onSiteAdded(newSiteName); // Pasar el nombre del sitio al callback
+      Navigator.pop(context); // Cerrar el diálogo
+      siteNameController.clear(); // Limpiar el campo de texto
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+    return AlertDialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12.0), // Bordes redondeados
+      ),
+      title: Center(
+        child: Text(
+          'Nuevo Sitio',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Colors.indigo,
+          ),
+        ),
+      ),
+      content: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: siteNameController,
+                validator: _validateSiteName,
+                decoration: InputDecoration(
+                  labelText: 'Nombre del nuevo sitio',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              SizedBox(height: 16.0),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            TextFormField(
-              controller: siteNameController,
-              validator: _validateSiteName,
-              decoration: InputDecoration(
-                labelText: 'Aquí el nombre del sitio',
-                border: OutlineInputBorder(),
+            ElevatedButton(
+              onPressed: _saveSite,
+              child: Text('Guardar'),
+              style: ElevatedButton.styleFrom(
+                foregroundColor: Colors.white,
+                backgroundColor: Colors.indigo,
               ),
             ),
-            SizedBox(height: 16.0),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                ElevatedButton(
-                  onPressed: _saveSite,
-                  child: Text('Guardar'),
-                  style: ElevatedButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    backgroundColor: Colors.blue,
-                  ),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    siteNameController.clear();
-                    Navigator.pop(context);
-                  },
-                  child: Text('Cancelar'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                  ),
-                ),
-              ],
+            ElevatedButton(
+              onPressed: () {
+                siteNameController.clear();
+                Navigator.pop(context);
+              },
+              child: Text('Cancelar'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: Colors.indigo, // Texto índigo para cancelar
+              ),
             ),
           ],
         ),
-      ),
+      ],
     );
   }
 }
