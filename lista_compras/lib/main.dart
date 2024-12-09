@@ -110,7 +110,7 @@ class _ListaScreenState extends State<ListaScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Shopping Market List', // Línea principal en negrita
+                'PocketList', // Línea principal en negrita
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -152,7 +152,7 @@ class _ListaScreenState extends State<ListaScreen> {
                 // Imagen decorativa
                 Image.asset(
                   './assets/c2.png', // Ruta de la imagen en la carpeta assets
-                  height: 200,
+                  height: 120,
                 ),
                 SizedBox(height: 10), // Espacio entre la imagen y el texto
                 // Descripción breve debajo de la imagen
@@ -170,7 +170,7 @@ class _ListaScreenState extends State<ListaScreen> {
                   Align(
                   alignment: Alignment.centerLeft, // Alinea el texto a la izquierda
                   child: Text(
-                    'Compras realizadas:',
+                    'Mis listas:',
                     style: TextStyle(
                       fontSize: 16,
                       color: Colors.indigo[700],
