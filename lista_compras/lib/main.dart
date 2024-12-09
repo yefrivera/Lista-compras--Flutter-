@@ -109,7 +109,7 @@ class _ListaScreenState extends State<ListaScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'PocketList', // Línea principal en negrita
+                'Shopping Market List', // Línea principal en negrita
                 style: TextStyle(
                   fontSize: 24, 
                   fontWeight: FontWeight.bold, 
@@ -144,10 +144,51 @@ class _ListaScreenState extends State<ListaScreen> {
               ],
             ),
           ),
-          // Contenido principal de la pantalla
+          // Nueva sección: Imagen en la parte superior
+          Padding(
+            padding: const EdgeInsets.all(30.0),
+            child: Column(
+              children: [
+                // Imagen decorativa
+                Image.asset(
+                  './assets/c2.png', // Ruta de la imagen en la carpeta assets
+                  height: 200,
+                ),
+                SizedBox(height: 10), // Espacio entre la imagen y el texto
+                // Descripción breve debajo de la imagen
+                Text(
+                  'Organiza tus compras de manera eficiente y rápida.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.indigo[700],
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+                SizedBox(height: 25), // Espacio entre la imagen y el texto
+                // Descripción breve debajo de la imagen
+                  Align(
+                  alignment: Alignment.centerLeft, // Alinea el texto a la izquierda
+                  child: Text(
+                    'Compras realizadas:',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.indigo[700],
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ),
+              ],
+              
+            ),
+            
+          ),
+
+          // Contenido principal: Lista de compras
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.all(30.0),
+              padding: const EdgeInsets.fromLTRB(30.0, 0.0, 30.0, 30.0),
+              //padding: const EdgeInsets.only(30.0),
               child: Column(
                 children: [
                   Expanded(
