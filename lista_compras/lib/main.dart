@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'Pages/DuplicarLista.dart'; 
+import 'Pages/DuplicarLista.dart';
 import 'Pages/ListaPorDentro.dart';
-import 'firebase_options.dart'; 
+import 'firebase_options.dart';
 
 // Punto de entrada de la aplicación
 void main() async {
@@ -25,7 +25,7 @@ class MyApp extends StatelessWidget {
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
       home: ListaScreen(), // Pantalla inicial
-    );       
+    );
   }
 }
 
@@ -39,7 +39,8 @@ class ListaScreen extends StatefulWidget {
 class _ListaScreenState extends State<ListaScreen> {
   List<String> listas = []; // Lista de nombres de listas
   List<String> idListas = []; // Lista de IDs de las listas
-  int? hoveredIndex; // Índice de elemento seleccionado al pasar el mouse (en web/desktop)
+  int?
+      hoveredIndex; // Índice de elemento seleccionado al pasar el mouse (en web/desktop)
 
   @override
   void initState() {
@@ -50,7 +51,8 @@ class _ListaScreenState extends State<ListaScreen> {
   // Método para obtener las listas desde Firestore
   void cargarListasDesdeFirestore() async {
     try {
-      QuerySnapshot querySnapshot = await FirebaseFirestore.instance.collection('Listas').get();
+      QuerySnapshot querySnapshot =
+          await FirebaseFirestore.instance.collection('Listas').get();
       List<String> nombresListas = [];
       List<String> idsListas = [];
 
@@ -73,28 +75,27 @@ class _ListaScreenState extends State<ListaScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => MyHomePage(title: listName, idLista: idLista), 
+        builder: (context) => MyHomePage(title: listName, idLista: idLista),
       ),
     );
   }
 
   // Método para mostrar el formulario para duplicar una lista
-  void mostrarFormularioDuplicarLista() async {
-    String? nuevoNombreLista = await showDialog<String>(
+  Future<void> mostrarFormularioDuplicarLista() async {
+    Map<String, String>? nuevaLista = await showDialog<Map<String, String>>(
       context: context,
       builder: (BuildContext context) {
         return DuplicarListaForm(
-          listaActual: listas.isNotEmpty ? listas[0] : '', // Lista seleccionada
+          listaActual: listas.isNotEmpty ? listas[0] : '',
           idListaSeleccionada: idListas.isNotEmpty ? idListas[0] : null,
         );
       },
     );
 
-    // Si se obtiene un nombre nuevo, se añade a la lista
-    if (nuevoNombreLista != null) {
+    if (nuevaLista != null) {
       setState(() {
-        listas.add(nuevoNombreLista); 
-        idListas.add("nuevoID"); 
+        listas.add(nuevaLista['nombre']!);
+        idListas.add(nuevaLista['id']!);
       });
     }
   }
@@ -111,18 +112,17 @@ class _ListaScreenState extends State<ListaScreen> {
               Text(
                 'PocketList', // Línea principal en negrita
                 style: TextStyle(
-                  fontSize: 24, 
-                  fontWeight: FontWeight.bold, 
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
                   color: Colors.indigo[500],
                 ),
               ),
               Text(
                 'Mis listas de compras', // Subtítulo en cursiva
                 style: TextStyle(
-                  fontSize: 16, 
-                  fontStyle: FontStyle.italic, 
-                  color: Colors.black
-                ),
+                    fontSize: 16,
+                    fontStyle: FontStyle.italic,
+                    color: Colors.black),
               ),
             ],
           ),
@@ -168,12 +168,16 @@ class _ListaScreenState extends State<ListaScreen> {
                             });
                           },
                           child: GestureDetector(
-                            onTap: () => navigateToList(context, listas[index], idListas[index]), // Navegar al detalle
+                            onTap: () => navigateToList(context, listas[index],
+                                idListas[index]), // Navegar al detalle
                             child: Container(
-                              margin: const EdgeInsets.symmetric(vertical: 10.0),
+                              margin:
+                                  const EdgeInsets.symmetric(vertical: 10.0),
                               padding: const EdgeInsets.all(25.0),
                               decoration: BoxDecoration(
-                                color: hoveredIndex == index ? Colors.indigo[100] : Colors.indigo[50],
+                                color: hoveredIndex == index
+                                    ? Colors.indigo[100]
+                                    : Colors.indigo[50],
                                 borderRadius: BorderRadius.circular(10),
                                 boxShadow: [
                                   BoxShadow(
@@ -184,7 +188,8 @@ class _ListaScreenState extends State<ListaScreen> {
                                 ],
                               ),
                               child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
                                     listas[index], // Nombre de la lista
@@ -195,7 +200,8 @@ class _ListaScreenState extends State<ListaScreen> {
                                     ),
                                   ),
                                   Icon(
-                                    Icons.arrow_forward_ios, // Flecha para indicar navegación
+                                    Icons
+                                        .arrow_forward_ios, // Flecha para indicar navegación
                                     color: Colors.indigo,
                                   ),
                                 ],
@@ -211,7 +217,7 @@ class _ListaScreenState extends State<ListaScreen> {
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       ElevatedButton.icon(
-                        onPressed: mostrarFormularioDuplicarLista, 
+                        onPressed: mostrarFormularioDuplicarLista,
                         icon: Icon(
                           Icons.add, // Icono de suma
                           color: Colors.indigo,
@@ -220,7 +226,8 @@ class _ListaScreenState extends State<ListaScreen> {
                         style: ElevatedButton.styleFrom(
                           foregroundColor: Colors.indigo,
                           backgroundColor: Colors.indigo[50],
-                          padding: EdgeInsets.symmetric(horizontal: 15, vertical: 16),
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 15, vertical: 16),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),

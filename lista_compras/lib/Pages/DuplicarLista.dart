@@ -14,8 +14,9 @@ class DuplicarListaForm extends StatefulWidget {
 class _DuplicarListaFormState extends State<DuplicarListaForm> {
   String nuevoNombreLista = '';
   String? listaSeleccionada;
-  List<String> listasFromDatabase = [];
+  List<Map<String, String>> listasFromDatabase = [];
   bool isButtonEnabled = false;
+  String? selectedListId; // Para guardar el ID de la lista seleccionada en el dropdown
 
   @override
   void initState() {
@@ -27,31 +28,63 @@ class _DuplicarListaFormState extends State<DuplicarListaForm> {
     try {
       QuerySnapshot querySnapshot =
           await FirebaseFirestore.instance.collection('Listas').get();
-      List<String> nombresListas = [];
-      querySnapshot.docs.forEach((doc) {
-        nombresListas.add(doc['nombre']);
-      });
+      List<Map<String, String>> listas = [];
+
+      for (var doc in querySnapshot.docs) {
+        listas.add({
+          'id': doc.id,
+          'nombre': doc['nombre'],
+        });
+      }
+
       setState(() {
-        listasFromDatabase = nombresListas;
+        listasFromDatabase = listas;
       });
     } catch (e) {
       print('Error de Firestore: $e');
     }
   }
 
-  void duplicarLista(String? listaSeleccionada, String nuevoNombreLista) async {
+  void crearLista(String nuevoNombreLista) {
+    if (nuevoNombreLista.isNotEmpty && nuevoNombreLista.length >= 5) {
+      FirebaseFirestore.instance.collection('Listas').add({
+        'nombre': nuevoNombreLista,
+        'fechaRegistro': FieldValue.serverTimestamp(),
+      }).then((docRef) {
+        Navigator.pop(context, {
+          'nombre': nuevoNombreLista,
+          'id': docRef.id
+        });
+      });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Ingrese el nombre de la nueva lista'),
+      ));
+    }
+  }
+
+  void duplicarLista(String idListaOriginal, String nuevoNombreLista) async {
     try {
       if (nuevoNombreLista.isNotEmpty && nuevoNombreLista.length >= 5) {
-        String nuevaListaId = FirebaseFirestore.instance.collection('Listas').doc().id;
-        Timestamp fechaRegistro = Timestamp.now();
+        final querySnapshotProductos = await FirebaseFirestore.instance
+            .collection('Listas')
+            .doc(idListaOriginal)
+            .collection('Productos')
+            .get();
 
-        await FirebaseFirestore.instance.collection('Listas').doc(nuevaListaId).set({
-          'id': nuevaListaId,
+        FirebaseFirestore.instance.collection('Listas').add({
           'nombre': nuevoNombreLista,
-          'fechaRegistro': fechaRegistro,
-        });
+          'fechaRegistro': FieldValue.serverTimestamp(),
+        }).then((docRef) {
+          for (var docSnapshot in querySnapshotProductos.docs) {
+            docRef.collection('Productos').add(docSnapshot.data());
+          }
 
-        Navigator.pop(context, nuevoNombreLista); // Devolver el nombre de la lista creada
+          Navigator.pop(context, {
+            'nombre': nuevoNombreLista,
+            'id': docRef.id
+          });
+        });
       } else {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('Ingrese el nombre de la nueva lista'),
@@ -62,22 +95,12 @@ class _DuplicarListaFormState extends State<DuplicarListaForm> {
     }
   }
 
-  String? validarNombreLista(String value) {
-    if (value.isEmpty) {
-      return 'Ingrese el nombre de la lista';
-    } else if (value.length < 5) {
-      return 'El nombre debe tener al menos 5 caracteres';
-    }
-    return null;
-  }
-
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
       title: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Título centrado en dos líneas
           Text(
             'Crear o duplicar lista',
             style: TextStyle(
@@ -87,9 +110,9 @@ class _DuplicarListaFormState extends State<DuplicarListaForm> {
             ),
             textAlign: TextAlign.center,
           ),
-          SizedBox(height: 8), // Espaciado entre líneas
+          SizedBox(height: 8),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0), // Padding horizontal
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: Text(
               'Para una nueva lista, deje el campo de duplicar vacío.',
               style: TextStyle(
@@ -100,8 +123,7 @@ class _DuplicarListaFormState extends State<DuplicarListaForm> {
               textAlign: TextAlign.center,
             ),
           ),
-          SizedBox(height: 16), // Espaciado antes de la línea divisoria
-          // Línea divisoria
+          SizedBox(height: 16),
           Container(
             height: 1,
             decoration: BoxDecoration(
@@ -129,12 +151,18 @@ class _DuplicarListaFormState extends State<DuplicarListaForm> {
                   setState(() {
                     listaSeleccionada = newValue;
                     isButtonEnabled = nuevoNombreLista.length >= 5;
+                    // Buscar el ID de la lista seleccionada
+                    var listaMap = listasFromDatabase.firstWhere(
+                      (element) => element['nombre'] == newValue,
+                      orElse: () => {}
+                    );
+                    selectedListId = listaMap['id'];
                   });
                 },
-                items: listasFromDatabase.map((String lista) {
+                items: listasFromDatabase.map((listaMap) {
                   return DropdownMenuItem<String>(
-                    value: lista,
-                    child: Text(lista),
+                    value: listaMap['nombre'],
+                    child: Text(listaMap['nombre'] ?? ''),
                   );
                 }).toList(),
                 decoration: InputDecoration(
@@ -153,7 +181,7 @@ class _DuplicarListaFormState extends State<DuplicarListaForm> {
                 decoration: InputDecoration(
                   labelText: 'Nombre de la nueva lista',
                   border: OutlineInputBorder(),
-                  errorText: nuevoNombreLista.isNotEmpty && nuevoNombreLista.length < 5
+                  errorText: (nuevoNombreLista.isNotEmpty && nuevoNombreLista.length < 5)
                       ? 'El nombre debe tener al menos 5 caracteres'
                       : null,
                 ),
@@ -172,17 +200,28 @@ class _DuplicarListaFormState extends State<DuplicarListaForm> {
         ElevatedButton(
           onPressed: isButtonEnabled
               ? () {
-                  duplicarLista(widget.idListaSeleccionada, nuevoNombreLista);
+                  if (listaSeleccionada == null) {
+                    // Crear lista nueva
+                    crearLista(nuevoNombreLista);
+                  } else {
+                    // Duplicar la lista seleccionada usando su ID real
+                    if (selectedListId != null) {
+                      duplicarLista(selectedListId!, nuevoNombreLista);
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        content: Text('No se pudo obtener el ID de la lista a duplicar'),
+                      ));
+                    }
+                  }
                 }
               : null,
-          child: Text('Añadir'),
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.indigo,
             foregroundColor: Colors.white,
           ),
+          child: Text('Añadir'),
         ),
       ],
     );
   }
-
 }

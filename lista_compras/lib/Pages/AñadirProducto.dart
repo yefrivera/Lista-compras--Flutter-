@@ -42,6 +42,7 @@ class _NewProductFormState extends State<NewProductForm> {
       String productName = _productController.text;
       String siteName = _selectedSite ?? '';
       String idLista = widget.idLista;
+      print(idLista);
 
       await FirebaseFirestore.instance
           .collection('Listas')
