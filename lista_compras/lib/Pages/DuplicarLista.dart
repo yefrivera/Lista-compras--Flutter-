@@ -74,7 +74,49 @@ class _DuplicarListaFormState extends State<DuplicarListaForm> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text('Crear o Duplicar Lista'),
+      title: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Título centrado en dos líneas
+          Text(
+            'Crear o duplicar lista',
+            style: TextStyle(
+              fontSize: 25,
+              fontWeight: FontWeight.bold,
+              color: Colors.indigo,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: 8), // Espaciado entre líneas
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0), // Padding horizontal
+            child: Text(
+              'Para una nueva lista, deje el campo de duplicar vacío.',
+              style: TextStyle(
+                fontSize: 14,
+                fontStyle: FontStyle.italic,
+                color: Colors.grey[600],
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          SizedBox(height: 16), // Espaciado antes de la línea divisoria
+          // Línea divisoria
+          Container(
+            height: 1,
+            decoration: BoxDecoration(
+              color: Colors.grey[300],
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey,
+                  blurRadius: 10,
+                  offset: Offset(0, 5),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
       content: SingleChildScrollView(
         child: Container(
           width: MediaQuery.of(context).size.width * 0.8,
@@ -96,7 +138,7 @@ class _DuplicarListaFormState extends State<DuplicarListaForm> {
                   );
                 }).toList(),
                 decoration: InputDecoration(
-                  labelText: 'Seleccione la lista que desea duplicar',
+                  labelText: 'Lista que desea duplicar',
                   border: OutlineInputBorder(),
                 ),
               ),
@@ -133,7 +175,7 @@ class _DuplicarListaFormState extends State<DuplicarListaForm> {
                   duplicarLista(widget.idListaSeleccionada, nuevoNombreLista);
                 }
               : null,
-          child: Text('Duplicar'),
+          child: Text('Añadir'),
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.indigo,
             foregroundColor: Colors.white,
@@ -142,4 +184,5 @@ class _DuplicarListaFormState extends State<DuplicarListaForm> {
       ],
     );
   }
+
 }

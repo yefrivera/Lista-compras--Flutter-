@@ -7,7 +7,7 @@ class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title, required this.idLista});
 
   final String title;
-  final String idLista; // Nuevo parámetro
+  final String idLista;
 
   @override
   State<MyHomePage> createState() => _MyHomePageState();
@@ -22,11 +22,10 @@ class _MyHomePageState extends State<MyHomePage> {
     _loadProducts();
   }
 
-  // Función para cargar los productos desde Firebase
   void _loadProducts() async {
     FirebaseFirestore.instance
         .collection('Listas')
-        .doc(widget.idLista) // Filtrar por idLista
+        .doc(widget.idLista)
         .collection('Productos')
         .snapshots()
         .listen((snapshot) {
@@ -40,7 +39,6 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  // Función para marcar un producto como comprado
   void _togglePurchased(String id, bool currentValue) async {
     await FirebaseFirestore.instance
         .collection('Listas')
@@ -52,7 +50,6 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  // Función para eliminar un producto
   void _deleteProduct(String id, bool comprado) async {
     if (!comprado) {
       await FirebaseFirestore.instance
@@ -63,12 +60,11 @@ class _MyHomePageState extends State<MyHomePage> {
           .delete();
     } else {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('No puedes eliminar un producto marcado como comprado.'),
+        content: Text('Ya has marcado el producto como comprado.'),
       ));
     }
   }
 
-  // Función para abrir el formulario de edición de un producto
   void _editProduct(Map<String, dynamic> product) {
     showModalBottomSheet(
       context: context,
@@ -78,125 +74,157 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
     );
   }
+  void _addNewProduct() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)), // Bordes redondeados
+        content: SingleChildScrollView(
+          child: NewProductForm(idLista: widget.idLista), // Llamar al formulario correctamente
+        ),
+      ),
+    );
+  }
+
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.title),
-        backgroundColor: Colors.purple, // Color del AppBar
+        title: Padding(
+          padding: const EdgeInsets.only(left: 95.0), // Desplazar título hacia la izquierda
+          child: Text(
+            widget.title,
+            style: TextStyle(
+              color: Colors.indigo, // Texto índigo
+              fontWeight: FontWeight.bold,
+              fontSize: 20,
+            ),
+          ),
+        ),
+        backgroundColor: Colors.white, // Fondo blanco
+        elevation: 0, // Sin sombra
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            Container(
-              width: MediaQuery.of(context).size.width,
-              child: DataTable(
-                columnSpacing: 15.0, // Espaciado entre columnas
-                headingRowColor: MaterialStateColor.resolveWith(
-                    (states) => Colors.blue.shade100),
-                columns: const <DataColumn>[
-                  DataColumn(
-                    label: Text(
-                      'Producto',
-                      style: TextStyle(
+      body: Column(
+        children: [
+          // Línea divisoria debajo del AppBar
+          Container(
+            height: 1,
+            decoration: BoxDecoration(
+              color: Colors.grey[300], // Línea gris clara
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey,
+                  blurRadius: 5,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+          ),
+          // Contenido principal
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  Container(
+                    width: MediaQuery.of(context).size.width,
+                    child: DataTable(
+                      columnSpacing: 15.0,
+                      headingRowColor: MaterialStateColor.resolveWith(
+                          (states) => Colors.indigo), // Fondo índigo para encabezados
+                      headingTextStyle: const TextStyle(
+                        color: Colors.white, // Texto blanco en encabezado
                         fontWeight: FontWeight.bold,
-                        color: Colors.indigo, // Color del texto del encabezado
                       ),
-                    ),
-                  ),
-                  DataColumn(
-                    label: Text(
-                      'Sitio',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.blue, // Color del texto del encabezado
-                      ),
-                    ),
-                  ),
-                  DataColumn(
-                    label: Text(
-                      'Acciones',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.blue, // Color del texto del encabezado
-                      ),
-                    ),
-                  ),
-                ],
-                rows: _products.map((product) {
-                  return DataRow(
-                    cells: <DataCell>[
-                      DataCell(
-                        GestureDetector(
-                          onDoubleTap: () => _togglePurchased(
-                              product['id'], product['comprado'] ?? false),
-                          child: Text(
-                            product['producto'] ?? '',
-                            style: TextStyle(
-                              color: Colors.blue, // Color del texto
-                              decoration: (product['comprado'] ?? false)
-                                  ? TextDecoration.lineThrough
-                                  : null,
-                            ),
-                          ),
+                      dividerThickness: 0.5, // Grosor de los bordes internos
+                      dataRowColor: MaterialStateProperty.resolveWith(
+                          (states) => Colors.white),
+                      dataRowHeight: 60,
+                      columns: const <DataColumn>[
+                        // Orden de columnas: Editar - Producto - Sitio - Eliminar
+                        DataColumn(
+                          label: Text('Editar'),
                         ),
-                      ),
-                      DataCell(
-                        GestureDetector(
-                          onDoubleTap: () => _togglePurchased(
-                              product['id'], product['comprado'] ?? false),
-                          child: Text(
-                            product['sitio'] ?? '',
-                            style: TextStyle(
-                              color: Colors.blue, // Color del texto
-                              decoration: (product['comprado'] ?? false)
-                                  ? TextDecoration.lineThrough
-                                  : null,
-                            ),
-                          ),
+                        DataColumn(
+                          label: Text('Producto'),
                         ),
-                      ),
-                      DataCell(
-                        Row(
-                          children: [
-                            IconButton(
-                              onPressed: () =>
-                                  _editProduct(product), // Abrir formulario de edición
-                              icon: Icon(Icons.edit),
-                              color: Colors.blue, // Color del icono
+                        DataColumn(
+                          label: Text('Sitio'),
+                        ),
+                        DataColumn(
+                          label: Text('Eliminar'),
+                        ),
+                      ],
+                      rows: _products.map((product) {
+                        return DataRow(
+                          cells: <DataCell>[
+                            // Columna Editar
+                            DataCell(
+                              IconButton(
+                                onPressed: () => _editProduct(product),
+                                icon: Icon(Icons.edit),
+                                color: Colors.indigo, // Color del icono
+                              ),
                             ),
-                            if (!(product['comprado'] ?? false))
+                            // Columna Producto
+                            DataCell(
+                              GestureDetector(
+                                onDoubleTap: () => _togglePurchased(
+                                    product['id'], product['comprado'] ?? false),
+                                child: Text(
+                                  product['producto'] ?? '',
+                                  style: TextStyle(
+                                    color: Colors.black,
+                                    decoration: (product['comprado'] ?? false)
+                                        ? TextDecoration.lineThrough
+                                        : null,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            // Columna Sitio
+                            DataCell(
+                              GestureDetector(
+                                onDoubleTap: () => _togglePurchased(
+                                    product['id'], product['comprado'] ?? false),
+                                child: Text(
+                                  product['sitio'] ?? '',
+                                  style: TextStyle(
+                                    color: Colors.black,
+                                    decoration: (product['comprado'] ?? false)
+                                        ? TextDecoration.lineThrough
+                                        : null,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            // Columna Eliminar
+                            DataCell(
                               IconButton(
                                 onPressed: () => _deleteProduct(
                                     product['id'], product['comprado'] ?? false),
                                 icon: Icon(Icons.delete),
                                 color: Colors.red[300], // Color del icono
                               ),
+                            ),
                           ],
-                        ),
-                      ),
-                    ],
-                  );
-                }).toList(),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          showModalBottomSheet(
-            context: context,
-            builder: (context) => Scaffold(
-              appBar: AppBar(title: Text('Nuevo Producto')),
-              body: NewProductForm(idLista: widget.idLista), // Pasar idLista aquí
-            ),
-          );
-        },
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _addNewProduct, // Cambiado para usar el AlertDialog
         tooltip: 'Añadir',
-        child: const Icon(Icons.add),
-        backgroundColor: Colors.blue, // Color del FAB
+        icon: const Icon(Icons.add),
+        label: const Text('Añadir'), // Texto "Añadir" en el botón
+        backgroundColor: Colors.indigo[50], // Fondo blanco
+        foregroundColor: Colors.indigo, // Texto e icono en índigo
       ),
     );
   }

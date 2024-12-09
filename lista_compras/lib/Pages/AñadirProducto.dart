@@ -40,10 +40,14 @@ class _NewProductFormState extends State<NewProductForm> {
   void _saveProduct() async {
     if (_formKey.currentState!.validate()) {
       String productName = _productController.text;
-      String siteName = _selectedSite!;
+      String siteName = _selectedSite ?? '';
       String idLista = widget.idLista;
 
-      await FirebaseFirestore.instance.collection('Listas').doc(idLista).collection('Productos').add({
+      await FirebaseFirestore.instance
+          .collection('Listas')
+          .doc(idLista)
+          .collection('Productos')
+          .add({
         'producto': productName,
         'sitio': siteName,
       });
@@ -61,60 +65,101 @@ class _NewProductFormState extends State<NewProductForm> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            TextFormField(
-              controller: _productController,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Por favor, ingrese el nombre del producto';
-                } else if (value.length < 3) {
-                  return 'El nombre del producto debe tener al menos 3 caracteres';
-                }
-                return null;
-              },
-              decoration: const InputDecoration(
-                labelText: 'Ingrese el nombre del producto',
-                border: OutlineInputBorder(),
+    return SizedBox(
+      // Aumentar el ancho del AlertDialog
+      width: MediaQuery.of(context).size.width * 0.8, // 80% del ancho de la pantalla
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Título principal centrado
+          Center(
+            child: Text(
+              'Añadir producto',
+              style: TextStyle(
+                fontSize: 24, // Tamaño más grande
+                fontWeight: FontWeight.bold,
+                color: Colors.indigo,
               ),
+              textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 16.0),
-            Row(
+          ),
+          SizedBox(height: 16), // Espaciado después del título
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Text(
+              'Ingrese los detalles del producto.',
+              style: TextStyle(
+                fontSize: 14,
+                fontStyle: FontStyle.italic,
+                color: Colors.grey[600],
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          SizedBox(height: 16),
+          Container(
+            height: 1,
+            decoration: BoxDecoration(
+              color: Colors.grey[300],
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey,
+                  blurRadius: 10,
+                  offset: Offset(0, 5),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(height: 16),
+          Form(
+            key: _formKey,
+            child: Column(
               children: [
-                Expanded(
-                  child: DropdownButtonFormField<String>(
-                    menuMaxHeight: 150,
-                    value: _selectedSite,
-                    validator: (value) {
-                      if (value == null) {
-                        return 'Por favor, seleccione un sitio';
-                      }
-                      return null;
-                    },
-                    hint: Text('Seleccionar sitio...'),
-                    onChanged: (String? newValue) {
-                      setState(() {
-                        _selectedSite = newValue;
-                      });
-                    },
-                    items: _sites.map((String site) {
-                      return DropdownMenuItem<String>(
-                        value: site,
-                        child: Text(site),
-                      );
-                    }).toList(),
-                    decoration: InputDecoration(
-                      border: OutlineInputBorder(),
-                    ),
+                TextFormField(
+                  controller: _productController,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Ingrese el nombre del producto';
+                    } else if (value.length < 3) {
+                      return 'El nombre debe tener al menos 3 caracteres';
+                    }
+                    return null;
+                  },
+                  decoration: const InputDecoration(
+                    labelText: 'Nombre del producto',
+                    border: OutlineInputBorder(),
                   ),
                 ),
-                SizedBox(width: 8.0),
-                ElevatedButton(
+                const SizedBox(height: 16.0),
+                DropdownButtonFormField<String>(
+                  menuMaxHeight: 150,
+                  value: _selectedSite,
+                  validator: (value) {
+                    if (value == null) {
+                      return 'Seleccione un sitio';
+                    }
+                    return null;
+                  },
+                  hint: Text('Seleccionar sitio...'),
+                  onChanged: (String? newValue) {
+                    setState(() {
+                      _selectedSite = newValue;
+                    });
+                  },
+                  items: _sites.map((String site) {
+                    return DropdownMenuItem<String>(
+                      value: site,
+                      child: Text(site),
+                    );
+                  }).toList(),
+                  decoration: InputDecoration(
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                SizedBox(height: 16.0),
+                // Botón de "Nuevo sitio" debajo del selector
+                ElevatedButton.icon(
                   onPressed: () {
                     showModalBottomSheet(
                       context: context,
@@ -126,40 +171,41 @@ class _NewProductFormState extends State<NewProductForm> {
                       ),
                     );
                   },
-                  child: Text('+'),
+                  icon: Icon(Icons.add),
+                  label: Text('Nuevo sitio'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
+                    backgroundColor: Colors.indigo[300],
                     foregroundColor: Colors.white,
                   ),
                 ),
+                SizedBox(height: 32.0), // Mayor separación entre selector y botones
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                      child: Text('Cancelar'),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        if (_formKey.currentState!.validate()) {
+                          _saveProduct();
+                        }
+                      },
+                      child: Text('Guardar'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.indigo,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
-            SizedBox(height: 16.0),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                ElevatedButton(
-                  onPressed: _saveProduct,
-                  child: Text('Guardar'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.indigo,
-                    foregroundColor: Colors.white,
-                  ),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                  child: Text('Cancelar'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: Colors.black, // Cambia el color del texto a negro para que sea visible
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
