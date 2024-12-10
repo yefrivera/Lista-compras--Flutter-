@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'Pages/DuplicarLista.dart';
 import 'Pages/ListaPorDentro.dart';
 import 'firebase_options.dart';
+import 'Pages/login.dart';
+import 'Pages/registro.dart';
 
-// Punto de entrada de la aplicación
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
@@ -15,50 +17,50 @@ void main() async {
   runApp(MyApp());
 }
 
-// Clase principal de la aplicación
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       theme: ThemeData(
-        primarySwatch: Colors.indigo, // Tema principal de la app
+        primarySwatch: Colors.indigo,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: ListaScreen(), // Pantalla inicial
+      debugShowCheckedModeBanner: false,
+      initialRoute: FirebaseAuth.instance.currentUser == null ? '/login' : '/home',
+      routes: {
+        '/login': (context) => LoginScreen(),
+        '/register': (context) => RegisterScreen(),
+        '/home': (context) => ListaScreen(),
+      },
     );
   }
 }
 
-// Pantalla principal de la app
 class ListaScreen extends StatefulWidget {
   @override
   _ListaScreenState createState() => _ListaScreenState();
 }
 
-// Estado de la pantalla principal
 class _ListaScreenState extends State<ListaScreen> {
-  List<String> listas = []; // Lista de nombres de listas
-  List<String> idListas = []; // Lista de IDs de las listas
-  int?
-      hoveredIndex; // Índice de elemento seleccionado al pasar el mouse (en web/desktop)
+  List<String> listas = [];
+  List<String> idListas = [];
+  int? hoveredIndex;
 
   @override
   void initState() {
     super.initState();
-    cargarListasDesdeFirestore(); // Cargar las listas desde Firestore al iniciar
+    cargarListasDesdeFirestore();
   }
 
-  // Método para obtener las listas desde Firestore
   void cargarListasDesdeFirestore() async {
     try {
-      QuerySnapshot querySnapshot =
-          await FirebaseFirestore.instance.collection('Listas').get();
+      QuerySnapshot querySnapshot = await FirebaseFirestore.instance.collection('Listas').get();
       List<String> nombresListas = [];
       List<String> idsListas = [];
 
       querySnapshot.docs.forEach((doc) {
-        nombresListas.add(doc['nombre']); // Obtiene los nombres de las listas
-        idsListas.add(doc.id); // Obtiene los IDs de las listas
+        nombresListas.add(doc['nombre']);
+        idsListas.add(doc.id);
       });
 
       setState(() {
@@ -66,11 +68,35 @@ class _ListaScreenState extends State<ListaScreen> {
         idListas = idsListas;
       });
     } catch (e) {
-      print('Error desde Firestore: $e'); // Manejo básico de errores
+      print('Error desde Firestore: $e');
     }
   }
 
-  // Método para navegar a la pantalla de una lista específica
+  Future<void> eliminarLista(int index) async {
+    try {
+      String idLista = idListas[index];
+      await FirebaseFirestore.instance.collection('Listas').doc(idLista).delete();
+
+      setState(() {
+        listas.removeAt(index);
+        idListas.removeAt(index);
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lista eliminada correctamente')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al eliminar la lista: ${e.toString()}')),
+      );
+    }
+  }
+
+  Future<void> _logout() async {
+    await FirebaseAuth.instance.signOut();
+    Navigator.pushReplacementNamed(context, '/login');
+  }
+
   void navigateToList(BuildContext context, String listName, String idLista) {
     Navigator.push(
       context,
@@ -80,7 +106,6 @@ class _ListaScreenState extends State<ListaScreen> {
     );
   }
 
-  // Método para mostrar el formulario para duplicar una lista
   Future<void> mostrarFormularioDuplicarLista() async {
     Map<String, String>? nuevaLista = await showDialog<Map<String, String>>(
       context: context,
@@ -104,13 +129,13 @@ class _ListaScreenState extends State<ListaScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        // Título de la AppBar con diseño en dos líneas
+        automaticallyImplyLeading: false,
         title: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'PocketList', // Línea principal en negrita
+                'PocketList',
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -118,44 +143,47 @@ class _ListaScreenState extends State<ListaScreen> {
                 ),
               ),
               Text(
-                'Mis listas de compras', // Subtítulo en cursiva
+                'Mis listas de compras',
                 style: TextStyle(
-                    fontSize: 16,
-                    fontStyle: FontStyle.italic,
-                    color: Colors.black),
+                  fontSize: 16,
+                  fontStyle: FontStyle.italic,
+                  color: Colors.black,
+                ),
               ),
             ],
           ),
         ),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.logout),
+            onPressed: _logout,
+          ),
+        ],
       ),
       body: Column(
         children: [
-          // Línea divisoria debajo del AppBar
           Container(
             height: 1,
             decoration: BoxDecoration(
-              color: Colors.grey[300], // Línea gris clara
+              color: Colors.grey[300],
               boxShadow: [
                 BoxShadow(
-                  color: Colors.grey, // Sombra ligera
+                  color: Colors.grey,
                   blurRadius: 10,
                   offset: Offset(0, 5),
                 ),
               ],
             ),
           ),
-          // Nueva sección: Imagen en la parte superior
           Padding(
             padding: const EdgeInsets.all(30.0),
             child: Column(
               children: [
-                // Imagen decorativa
                 Image.asset(
-                  './assets/c2.png', // Ruta de la imagen en la carpeta assets
+                  './assets/c2.png',
                   height: 120,
                 ),
-                SizedBox(height: 10), // Espacio entre la imagen y el texto
-                // Descripción breve debajo de la imagen
+                SizedBox(height: 10),
                 Text(
                   'Organiza tus compras de manera eficiente y rápida.',
                   textAlign: TextAlign.center,
@@ -165,10 +193,9 @@ class _ListaScreenState extends State<ListaScreen> {
                     fontStyle: FontStyle.italic,
                   ),
                 ),
-                SizedBox(height: 25), // Espacio entre la imagen y el texto
-                // Descripción breve debajo de la imagen
-                  Align(
-                  alignment: Alignment.centerLeft, // Alinea el texto a la izquierda
+                SizedBox(height: 25),
+                Align(
+                  alignment: Alignment.centerLeft,
                   child: Text(
                     'Mis listas:',
                     style: TextStyle(
@@ -179,107 +206,91 @@ class _ListaScreenState extends State<ListaScreen> {
                   ),
                 ),
               ],
-              
             ),
-            
           ),
-
-          // Contenido principal: Lista de compras
           Expanded(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(30.0, 0.0, 30.0, 30.0),
-              //padding: const EdgeInsets.only(30.0),
-              child: Column(
-                children: [
-                  Expanded(
-                    // Lista de elementos obtenidos de Firestore
-                    child: ListView.builder(
-                      itemCount: listas.length,
-                      itemBuilder: (context, index) {
-                        return MouseRegion(
-                          // Cambia el estado al pasar el mouse sobre un elemento
-                          onEnter: (_) {
-                            setState(() {
-                              hoveredIndex = index;
-                            });
-                          },
-                          onExit: (_) {
-                            setState(() {
-                              hoveredIndex = null;
-                            });
-                          },
-                          child: GestureDetector(
-                            onTap: () => navigateToList(context, listas[index],
-                                idListas[index]), // Navegar al detalle
-                            child: Container(
-                              margin:
-                                  const EdgeInsets.symmetric(vertical: 10.0),
-                              padding: const EdgeInsets.all(25.0),
-                              decoration: BoxDecoration(
-                                color: hoveredIndex == index
-                                    ? Colors.indigo[100]
-                                    : Colors.indigo[50],
-                                borderRadius: BorderRadius.circular(10),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black12,
-                                    blurRadius: 12,
-                                    offset: Offset(0, 4),
-                                  ),
-                                ],
-                              ),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    listas[index], // Nombre de la lista
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.indigo,
-                                    ),
-                                  ),
-                                  Icon(
-                                    Icons
-                                        .arrow_forward_ios, // Flecha para indicar navegación
-                                    color: Colors.indigo,
-                                  ),
-                                ],
+              child: ListView.builder(
+                itemCount: listas.length,
+                itemBuilder: (context, index) {
+                  return Dismissible(
+                    key: Key(idListas[index]),
+                    direction: DismissDirection.endToStart,
+                    background: Container(
+                      alignment: Alignment.centerRight,
+                      color: Colors.red,
+                      padding: EdgeInsets.symmetric(horizontal: 20.0),
+                      child: Icon(Icons.delete, color: Colors.white),
+                    ),
+                    onDismissed: (direction) {
+                      eliminarLista(index); // Llama al método para eliminar la lista
+                    },
+                    child: GestureDetector(
+                      onTap: () => navigateToList(context, listas[index], idListas[index]),
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(vertical: 10.0),
+                        padding: const EdgeInsets.all(25.0),
+                        decoration: BoxDecoration(
+                          color: Colors.indigo[50],
+                          borderRadius: BorderRadius.circular(10),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black12,
+                              blurRadius: 12,
+                              offset: Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              listas[index],
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.indigo,
                               ),
                             ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                  // Botón de añadir/duplicar lista, alineado a la derecha
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      ElevatedButton.icon(
-                        onPressed: mostrarFormularioDuplicarLista,
-                        icon: Icon(
-                          Icons.add, // Icono de suma
-                          color: Colors.indigo,
-                        ),
-                        label: Text('Añadir'), // Texto del botón
-                        style: ElevatedButton.styleFrom(
-                          foregroundColor: Colors.indigo,
-                          backgroundColor: Colors.indigo[50],
-                          padding: EdgeInsets.symmetric(
-                              horizontal: 15, vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+                            Icon(
+                              Icons.arrow_forward_ios,
+                              color: Colors.indigo,
+                            ),
+                          ],
                         ),
                       ),
-                    ],
-                  ),
-                ],
+                    ),
+                  );
+                },
               ),
             ),
           ),
+Row(
+  mainAxisAlignment: MainAxisAlignment.end, // Mantiene el botón alineado a la derecha
+  children: [
+    Padding(
+      padding: const EdgeInsets.only(right: 30.0, bottom: 30.0), // Desplaza un poco hacia la izquierda y arriba
+      child: ElevatedButton.icon(
+        onPressed: mostrarFormularioDuplicarLista,
+        icon: Icon(
+          Icons.add,
+          color: Colors.indigo,
+        ),
+        label: Text('Añadir'),
+        style: ElevatedButton.styleFrom(
+          foregroundColor: Colors.indigo,
+          backgroundColor: Colors.indigo[50],
+          padding: EdgeInsets.symmetric(horizontal: 15, vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      ),
+    ),
+  ],
+),
+
         ],
       ),
     );
