@@ -15,9 +15,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
 
-  // Llave fija y vector de inicialización
+  // Llave fija y vector de inicialización para cifrar
   final key = encrypt.Key.fromUtf8('my32lengthsupersecretnooneknows1'); // 32 caracteres
   final iv = encrypt.IV.fromUtf8('16lengthinitvect'); // 16 caracteres
+
+  // Método para cifrar la contraseña
+  String _encryptPassword(String password) {
+    final encrypter = encrypt.Encrypter(encrypt.AES(key));
+    final encrypted = encrypter.encrypt(password, iv: iv);
+    return encrypted.base64; // Devuelve la contraseña cifrada en base64
+  }
 
   // Método para validar campos y registrar al usuario
   Future<void> _register() async {
@@ -62,6 +69,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
 
     try {
+      // Cifrar la contraseña antes de guardar
+      final encryptedPassword = _encryptPassword(_passwordController.text.trim());
+
       // Crear usuario con Firebase Authentication
       UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: _emailController.text.trim(),
@@ -76,6 +86,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         'nombres': _nameController.text.trim(),
         'apellidos': _apellidosController.text.trim(),
         'email': _emailController.text.trim(),
+        'password': encryptedPassword, // Guardar la contraseña cifrada
         'createdAt': FieldValue.serverTimestamp(),
         'listas': [], // Inicializa con una lista vacía
       });

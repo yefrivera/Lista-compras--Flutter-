@@ -171,7 +171,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       color: Colors.black,
                     ),
                   ),
-                  SizedBox(height: 10),
+                  SizedBox(height: 20),
                   ElevatedButton(
                     onPressed: _navigateToRegister,
                     style: ElevatedButton.styleFrom(
