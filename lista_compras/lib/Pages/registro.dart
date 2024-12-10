@@ -39,7 +39,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
-    // Validación de longitud del login
+    // Validación de longitud del correo
     if (_emailController.text.trim().length > 40) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('El correo no puede tener más de 40 caracteres.')),
@@ -50,7 +50,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
-    // Validación de longitud del password
+    // Validación de longitud de la contraseña
     if (_passwordController.text.trim().length > 200) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('La contraseña no puede tener más de 200 caracteres.')),
@@ -61,11 +61,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
-    // Cifrado de la contraseña para Firestore
-    final encryptedPassword = _encryptPassword(_passwordController.text.trim());
-
     try {
-      // Crear usuario con Firebase Authentication (sin cifrar contraseña)
+      // Crear usuario con Firebase Authentication
       UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
@@ -75,12 +72,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
       String uid = userCredential.user!.uid;
 
       // Guardar los datos adicionales en Firestore
-      await FirebaseFirestore.instance.collection('users').doc(uid).set({
-        'name': _nameController.text.trim(),
-        'lastName': _apellidosController.text.trim(),
+      await FirebaseFirestore.instance.collection('Usuarios').doc(uid).set({
+        'nombres': _nameController.text.trim(),
+        'apellidos': _apellidosController.text.trim(),
         'email': _emailController.text.trim(),
-        'password': encryptedPassword, // Se guarda la contraseña cifrada
         'createdAt': FieldValue.serverTimestamp(),
+        'listas': [], // Inicializa con una lista vacía
       });
 
       // Mostrar mensaje de éxito
@@ -101,13 +98,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
         _isLoading = false;
       });
     }
-  }
-
-  // Método para cifrar la contraseña usando AES
-  String _encryptPassword(String password) {
-    final encrypter = encrypt.Encrypter(encrypt.AES(key));
-    final encrypted = encrypter.encrypt(password, iv: iv);
-    return encrypted.base64; // Devuelve la contraseña cifrada en base64
   }
 
   @override

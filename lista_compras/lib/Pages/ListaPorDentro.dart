@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'AñadirProducto.dart';
 import 'EditarProducto.dart';
 
@@ -22,8 +23,13 @@ class _MyHomePageState extends State<MyHomePage> {
     _loadProducts();
   }
 
+  // Cargar los productos de la lista del usuario autenticado
   void _loadProducts() {
+    String uid = FirebaseAuth.instance.currentUser!.uid; // UID del usuario actual
+
     FirebaseFirestore.instance
+        .collection('Usuarios')
+        .doc(uid)
         .collection('Listas')
         .doc(widget.idLista)
         .collection('Productos')
@@ -39,8 +45,12 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
+  // Alternar el estado de "comprado" de un producto
   void _togglePurchased(String id, bool currentValue) async {
+    String uid = FirebaseAuth.instance.currentUser!.uid;
     await FirebaseFirestore.instance
+        .collection('Usuarios')
+        .doc(uid)
         .collection('Listas')
         .doc(widget.idLista)
         .collection('Productos')
@@ -48,9 +58,14 @@ class _MyHomePageState extends State<MyHomePage> {
         .update({'comprado': !currentValue});
   }
 
+  // Eliminar un producto de la lista
   void _deleteProduct(String id, bool comprado) async {
+    String uid = FirebaseAuth.instance.currentUser!.uid;
+
     if (!comprado) {
       await FirebaseFirestore.instance
+          .collection('Usuarios')
+          .doc(uid)
           .collection('Listas')
           .doc(widget.idLista)
           .collection('Productos')
@@ -63,6 +78,7 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
+  // Abrir el formulario para editar un producto
   void _editProduct(Map<String, dynamic> product) {
     showDialog(
       context: context,
@@ -73,6 +89,7 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
+  // Abrir el formulario para agregar un nuevo producto
   void _addNewProduct() {
     showDialog(
       context: context,

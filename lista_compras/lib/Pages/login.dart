@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // Firebase Authentication
 import 'package:cloud_firestore/cloud_firestore.dart'; // Firestore para la base de datos
 import 'package:encrypt/encrypt.dart' as encrypt; // Encriptación
 
@@ -16,7 +17,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final key = encrypt.Key.fromUtf8('my32lengthsupersecretnooneknows1'); // 32 caracteres
   final iv = encrypt.IV.fromUtf8('16lengthinitvect'); // 16 caracteres
 
-  // Método para iniciar sesión con Firebase y Firestore
+  // Método para iniciar sesión con Firebase Authentication y Firestore
   Future<void> _login() async {
     setState(() {
       _isLoading = true;
@@ -35,44 +36,41 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     try {
-      // Cifrar la contraseña ingresada
-      String encryptedPassword = _encryptPassword(_passwordController.text.trim());
+      // Autenticar usuario con Firebase Authentication
+      UserCredential userCredential = await FirebaseAuth.instance
+          .signInWithEmailAndPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+      );
 
-      // Consultar Firestore para obtener el usuario
-      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-          .collection('users')
-          .where('email', isEqualTo: _emailController.text.trim())
+      // Obtener UID del usuario autenticado
+      String uid = userCredential.user!.uid;
+
+      // Validar si el usuario tiene datos asociados en Firestore
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('Usuarios')
+          .doc(uid)
           .get();
 
-      if (querySnapshot.docs.isEmpty) {
-        // Si no se encuentra el correo en la base de datos
+      if (!userDoc.exists) {
+        // Si no hay datos asociados en Firestore
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Correo no registrado.')),
+          SnackBar(content: Text('Usuario no encontrado en la base de datos.')),
         );
+        await FirebaseAuth.instance.signOut(); // Cerrar sesión
         setState(() {
           _isLoading = false;
         });
         return;
       }
 
-      // Obtener el documento del usuario
-      var userDoc = querySnapshot.docs.first;
+      // Inicio de sesión exitoso
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Inicio de sesión exitoso.')),
+      );
 
-      // Comparar la contraseña cifrada ingresada con la almacenada
-      if (userDoc['password'] == encryptedPassword) {
-        // Inicio de sesión exitoso
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Inicio de sesión exitoso.')),
-        );
-
-        // Redirigir a la pantalla principal
-        Navigator.pushReplacementNamed(context, '/home');
-      } else {
-        // Contraseña incorrecta
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Contraseña incorrecta.')),
-        );
-      }
+      // Redirigir a la pantalla principal
+      Navigator.pushReplacementNamed(context, '/home');
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error al iniciar sesión: ${e.toString()}')),
@@ -84,7 +82,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  // Método para cifrar la contraseña usando AES
+  // cifrado de contraseña
   String _encryptPassword(String password) {
     final encrypter = encrypt.Encrypter(encrypt.AES(key));
     final encrypted = encrypter.encrypt(password, iv: iv);

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'AgregarSitio.dart';
-import 'firebase_services.dart';
 
 class NewProductForm extends StatefulWidget {
   final String idLista;
@@ -24,56 +24,91 @@ class _NewProductFormState extends State<NewProductForm> {
     _loadSites();
   }
 
-  void _loadSites() async {
-    List<String> sitios = await readData();
-    setState(() {
-      _sites = sitios;
-    });
-  }
+  // Cargar los sitios para el usuario autenticado
+void _loadSites() async {
+  try {
+    String uid = FirebaseAuth.instance.currentUser!.uid; // UID del usuario actual
+    QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+        .collection('Usuarios')
+        .doc(uid)
+        .collection('Sitios')
+        .get();
 
-  void _addSiteToList(String newSiteName) {
+    // Asegúrate de usar el nombre correcto del campo
+    List<String> sitios = querySnapshot.docs.map((doc) {
+      return doc['nombre_sitio'] as String; // Cambia a 'nombre_sitio' si es el campo correcto
+    }).toList();
+
+    // Eliminar duplicados si existen
     setState(() {
+      _sites = sitios.toSet().toList();
+    });
+  } catch (e) {
+    print('Error al cargar los sitios: $e');
+  }
+}
+
+
+
+  // Añadir un nuevo sitio a la lista local y la base de datos
+void _addSiteToList(String newSiteName) {
+  setState(() {
+    if (!_sites.contains(newSiteName)) {
       _sites.add(newSiteName);
-    });
-  }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('El sitio "$newSiteName" ya existe.')),
+      );
+    }
+  });
+}
 
+
+  // Guardar un producto en la base de datos
   void _saveProduct() async {
     if (_formKey.currentState!.validate()) {
-      String productName = _productController.text;
-      String siteName = _selectedSite ?? '';
-      String idLista = widget.idLista;
-      print(idLista);
+      try {
+        String uid = FirebaseAuth.instance.currentUser!.uid; // UID del usuario actual
+        String productName = _productController.text;
+        String siteName = _selectedSite ?? '';
 
-      await FirebaseFirestore.instance
-          .collection('Listas')
-          .doc(idLista)
-          .collection('Productos')
-          .add({
-        'producto': productName,
-        'sitio': siteName,
-      });
+        await FirebaseFirestore.instance
+            .collection('Usuarios')
+            .doc(uid)
+            .collection('Listas')
+            .doc(widget.idLista)
+            .collection('Productos')
+            .add({
+          'producto': productName,
+          'sitio': siteName,
+          'fecha': FieldValue.serverTimestamp(),
+        });
 
-      _productController.clear();
-      _selectedSite = null;
+        _productController.clear();
+        _selectedSite = null;
 
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Producto guardado exitosamente'),
-      ));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Producto guardado exitosamente'),
+        ));
 
-      Navigator.pop(context);
+        Navigator.pop(context);
+      } catch (e) {
+        print('Error al guardar el producto: $e');
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Error al guardar el producto.'),
+        ));
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      // Aumentar el ancho del AlertDialog
       width: MediaQuery.of(context).size.width * 0.8, // 80% del ancho de la pantalla
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Título principal centrado
           Center(
             child: Text(
               'Añadir producto',
@@ -85,7 +120,7 @@ class _NewProductFormState extends State<NewProductForm> {
               textAlign: TextAlign.center,
             ),
           ),
-          SizedBox(height: 16), // Espaciado después del título
+          SizedBox(height: 16),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: Text(
@@ -135,14 +170,7 @@ class _NewProductFormState extends State<NewProductForm> {
                 const SizedBox(height: 16.0),
                 DropdownButtonFormField<String>(
                   menuMaxHeight: 150,
-                  value: _selectedSite,
-                  validator: (value) {
-                    if (value == null) {
-                      return 'Seleccione un sitio';
-                    }
-                    return null;
-                  },
-                  hint: Text('Seleccionar sitio...'),
+                  value: _sites.contains(_selectedSite) ? _selectedSite : null, // Validar que el valor seleccionado sea válido
                   onChanged: (String? newValue) {
                     setState(() {
                       _selectedSite = newValue;
@@ -153,19 +181,20 @@ class _NewProductFormState extends State<NewProductForm> {
                       value: site,
                       child: Text(site),
                     );
-                  }).toList(),
+                  }).toList(), 
                   decoration: InputDecoration(
+                    labelText: 'Seleccionar sitio',
                     border: OutlineInputBorder(),
                   ),
                 ),
+
                 SizedBox(height: 16.0),
-                // Botón de "Nuevo sitio" debajo del selector
                 ElevatedButton.icon(
                   onPressed: () {
                     showDialog(
                       context: context,
                       builder: (context) => NewSitioForm(
-                        onSiteAdded: _addSiteToList, // Callback para actualizar la lista de sitios
+                        onSiteAdded: _addSiteToList,
                       ),
                     );
                   },
@@ -176,8 +205,7 @@ class _NewProductFormState extends State<NewProductForm> {
                     foregroundColor: Colors.white,
                   ),
                 ),
-
-                SizedBox(height: 32.0), // Mayor separación entre selector y botones
+                SizedBox(height: 32.0),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [

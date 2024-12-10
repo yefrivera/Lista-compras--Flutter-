@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class DuplicarListaForm extends StatefulWidget {
   final String listaActual;
@@ -16,7 +17,7 @@ class _DuplicarListaFormState extends State<DuplicarListaForm> {
   String? listaSeleccionada;
   List<Map<String, String>> listasFromDatabase = [];
   bool isButtonEnabled = false;
-  String? selectedListId; // Para guardar el ID de la lista seleccionada en el dropdown
+  String? selectedListId; // ID de la lista seleccionada
 
   @override
   void initState() {
@@ -24,10 +25,16 @@ class _DuplicarListaFormState extends State<DuplicarListaForm> {
     cargarListasDesdeBaseDeDatos();
   }
 
+  // Cargar listas del usuario actual desde Firestore
   void cargarListasDesdeBaseDeDatos() async {
     try {
-      QuerySnapshot querySnapshot =
-          await FirebaseFirestore.instance.collection('Listas').get();
+      String uid = FirebaseAuth.instance.currentUser!.uid; // UID del usuario actual
+      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+          .collection('Usuarios')
+          .doc(uid)
+          .collection('Listas')
+          .get();
+
       List<Map<String, String>> listas = [];
 
       for (var doc in querySnapshot.docs) {
@@ -45,17 +52,27 @@ class _DuplicarListaFormState extends State<DuplicarListaForm> {
     }
   }
 
-  void crearLista(String nuevoNombreLista) {
+  // Crear una nueva lista para el usuario actual
+  void crearLista(String nuevoNombreLista) async {
     if (nuevoNombreLista.isNotEmpty && nuevoNombreLista.length >= 5) {
-      FirebaseFirestore.instance.collection('Listas').add({
-        'nombre': nuevoNombreLista,
-        'fechaRegistro': FieldValue.serverTimestamp(),
-      }).then((docRef) {
+      try {
+        String uid = FirebaseAuth.instance.currentUser!.uid; // UID del usuario actual
+        DocumentReference nuevaListaRef = await FirebaseFirestore.instance
+            .collection('Usuarios')
+            .doc(uid)
+            .collection('Listas')
+            .add({
+          'nombre': nuevoNombreLista,
+          'fechaRegistro': FieldValue.serverTimestamp(),
+        });
+
         Navigator.pop(context, {
           'nombre': nuevoNombreLista,
-          'id': docRef.id
+          'id': nuevaListaRef.id
         });
-      });
+      } catch (e) {
+        print('Error al crear nueva lista: $e');
+      }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text('Ingrese el nombre de la nueva lista'),
@@ -63,37 +80,59 @@ class _DuplicarListaFormState extends State<DuplicarListaForm> {
     }
   }
 
-  void duplicarLista(String idListaOriginal, String nuevoNombreLista) async {
-    try {
-      if (nuevoNombreLista.isNotEmpty && nuevoNombreLista.length >= 5) {
-        final querySnapshotProductos = await FirebaseFirestore.instance
-            .collection('Listas')
-            .doc(idListaOriginal)
-            .collection('Productos')
-            .get();
+  // Duplicar una lista existente
+void duplicarLista(String idListaOriginal, String nuevoNombreLista) async {
+  try {
+    if (nuevoNombreLista.isNotEmpty && nuevoNombreLista.length >= 5) {
+      // Obtener UID del usuario actual
+      String uid = FirebaseAuth.instance.currentUser!.uid;
 
-        FirebaseFirestore.instance.collection('Listas').add({
-          'nombre': nuevoNombreLista,
-          'fechaRegistro': FieldValue.serverTimestamp(),
-        }).then((docRef) {
-          for (var docSnapshot in querySnapshotProductos.docs) {
-            docRef.collection('Productos').add(docSnapshot.data());
-          }
+      // Consultar los productos de la lista original
+      final querySnapshotProductos = await FirebaseFirestore.instance
+          .collection('Usuarios')
+          .doc(uid)
+          .collection('Listas')
+          .doc(idListaOriginal)
+          .collection('Productos')
+          .get();
 
-          Navigator.pop(context, {
-            'nombre': nuevoNombreLista,
-            'id': docRef.id
-          });
-        });
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Ingrese el nombre de la nueva lista'),
-        ));
+      // Crear una nueva lista
+      DocumentReference nuevaListaRef = await FirebaseFirestore.instance
+          .collection('Usuarios')
+          .doc(uid)
+          .collection('Listas')
+          .add({
+        'nombre': nuevoNombreLista,
+        'fechaRegistro': FieldValue.serverTimestamp(),
+      });
+
+      // Copiar productos a la nueva lista
+      for (var docSnapshot in querySnapshotProductos.docs) {
+        // Convertir los datos del documento a Map<String, dynamic>
+        Map<String, dynamic> productData =
+            docSnapshot.data() as Map<String, dynamic>;
+
+        await nuevaListaRef.collection('Productos').add(productData);
       }
-    } catch (e) {
-      print('Error al crear la nueva lista: $e');
+
+      // Notificar que se ha completado
+      Navigator.pop(context, {
+        'nombre': nuevoNombreLista,
+        'id': nuevaListaRef.id,
+      });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Ingrese el nombre de la nueva lista')),
+      );
     }
+  } catch (e) {
+    print('Error al duplicar la lista: $e');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error al duplicar la lista')),
+    );
   }
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -201,10 +240,8 @@ class _DuplicarListaFormState extends State<DuplicarListaForm> {
           onPressed: isButtonEnabled
               ? () {
                   if (listaSeleccionada == null) {
-                    // Crear lista nueva
                     crearLista(nuevoNombreLista);
                   } else {
-                    // Duplicar la lista seleccionada usando su ID real
                     if (selectedListId != null) {
                       duplicarLista(selectedListId!, nuevoNombreLista);
                     } else {

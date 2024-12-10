@@ -52,15 +52,20 @@ class _ListaScreenState extends State<ListaScreen> {
     cargarListasDesdeFirestore();
   }
 
+  // Cargar listas desde Firestore para el usuario autenticado
   void cargarListasDesdeFirestore() async {
     try {
-      QuerySnapshot querySnapshot = await FirebaseFirestore.instance.collection('Listas').get();
+      String uid = FirebaseAuth.instance.currentUser!.uid; // UID del usuario actual
+      CollectionReference userListas =
+          FirebaseFirestore.instance.collection('Usuarios').doc(uid).collection('Listas');
+
+      QuerySnapshot querySnapshot = await userListas.get();
       List<String> nombresListas = [];
       List<String> idsListas = [];
 
       querySnapshot.docs.forEach((doc) {
-        nombresListas.add(doc['nombre']);
-        idsListas.add(doc.id);
+        nombresListas.add(doc['nombre']); // Nombres de las listas
+        idsListas.add(doc.id); // IDs de las listas
       });
 
       setState(() {
@@ -72,10 +77,15 @@ class _ListaScreenState extends State<ListaScreen> {
     }
   }
 
+  // Eliminar una lista específica
   Future<void> eliminarLista(int index) async {
     try {
+      String uid = FirebaseAuth.instance.currentUser!.uid; // UID del usuario actual
       String idLista = idListas[index];
-      await FirebaseFirestore.instance.collection('Listas').doc(idLista).delete();
+      CollectionReference userListas =
+          FirebaseFirestore.instance.collection('Usuarios').doc(uid).collection('Listas');
+
+      await userListas.doc(idLista).delete();
 
       setState(() {
         listas.removeAt(index);
@@ -92,11 +102,13 @@ class _ListaScreenState extends State<ListaScreen> {
     }
   }
 
+  // Cerrar sesión
   Future<void> _logout() async {
     await FirebaseAuth.instance.signOut();
     Navigator.pushReplacementNamed(context, '/login');
   }
 
+  // Navegar a la pantalla de una lista específica
   void navigateToList(BuildContext context, String listName, String idLista) {
     Navigator.push(
       context,
@@ -106,6 +118,7 @@ class _ListaScreenState extends State<ListaScreen> {
     );
   }
 
+  // Mostrar el formulario para duplicar una lista
   Future<void> mostrarFormularioDuplicarLista() async {
     Map<String, String>? nuevaLista = await showDialog<Map<String, String>>(
       context: context,
@@ -224,7 +237,7 @@ class _ListaScreenState extends State<ListaScreen> {
                       child: Icon(Icons.delete, color: Colors.white),
                     ),
                     onDismissed: (direction) {
-                      eliminarLista(index); // Llama al método para eliminar la lista
+                      eliminarLista(index);
                     },
                     child: GestureDetector(
                       onTap: () => navigateToList(context, listas[index], idListas[index]),
@@ -266,31 +279,30 @@ class _ListaScreenState extends State<ListaScreen> {
               ),
             ),
           ),
-Row(
-  mainAxisAlignment: MainAxisAlignment.end, // Mantiene el botón alineado a la derecha
-  children: [
-    Padding(
-      padding: const EdgeInsets.only(right: 30.0, bottom: 30.0), // Desplaza un poco hacia la izquierda y arriba
-      child: ElevatedButton.icon(
-        onPressed: mostrarFormularioDuplicarLista,
-        icon: Icon(
-          Icons.add,
-          color: Colors.indigo,
-        ),
-        label: Text('Añadir'),
-        style: ElevatedButton.styleFrom(
-          foregroundColor: Colors.indigo,
-          backgroundColor: Colors.indigo[50],
-          padding: EdgeInsets.symmetric(horizontal: 15, vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(right: 30.0, bottom: 30.0),
+                child: ElevatedButton.icon(
+                  onPressed: mostrarFormularioDuplicarLista,
+                  icon: Icon(
+                    Icons.add,
+                    color: Colors.indigo,
+                  ),
+                  label: Text('Añadir'),
+                  style: ElevatedButton.styleFrom(
+                    foregroundColor: Colors.indigo,
+                    backgroundColor: Colors.indigo[50],
+                    padding: EdgeInsets.symmetric(horizontal: 15, vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-        ),
-      ),
-    ),
-  ],
-),
-
         ],
       ),
     );

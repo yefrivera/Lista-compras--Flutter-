@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'firebase_services.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class EditProductForm extends StatefulWidget {
   final Map<String, dynamic> productToEdit;
@@ -27,13 +27,32 @@ class _EditProductFormState extends State<EditProductForm> {
     _loadSites();
   }
 
-  // Cargar los sitios desde Firestore
+  // Cargar los sitios del usuario autenticado desde Firestore
   void _loadSites() async {
-    List<String> sitios = await readData();
-    setState(() {
-      _sites = sitios;
-      _loading = false;
-    });
+    try {
+      String uid = FirebaseAuth.instance.currentUser!.uid; // UID del usuario actual
+      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+          .collection('Usuarios')
+          .doc(uid)
+          .collection('Sitios')
+          .get();
+
+      List<String> sitios = querySnapshot.docs.map((doc) => doc['nombre_sitio'] as String).toList();
+
+      setState(() {
+        _sites = sitios;
+        // Validar que _selectedSite sea parte de _sites
+        if (!_sites.contains(_selectedSite)) {
+          _selectedSite = null; // Si no está, establece un valor nulo
+        }
+        _loading = false;
+      });
+    } catch (e) {
+      print('Error al cargar sitios: $e');
+      setState(() {
+        _loading = false;
+      });
+    }
   }
 
   // Validador del nombre del producto
@@ -46,24 +65,34 @@ class _EditProductFormState extends State<EditProductForm> {
     return null;
   }
 
-  // Guardar el producto
+  // Guardar el producto editado
   void _saveProduct() async {
     if (_formKey.currentState!.validate() && _selectedSite != null) {
-      await FirebaseFirestore.instance
-          .collection('Listas')
-          .doc(widget.idLista)
-          .collection('Productos')
-          .doc(widget.productToEdit['id'])
-          .update({
-        'producto': _productController.text,
-        'sitio': _selectedSite,
-      });
+      try {
+        String uid = FirebaseAuth.instance.currentUser!.uid; // UID del usuario actual
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Producto actualizado exitosamente')),
-      );
+        await FirebaseFirestore.instance
+            .collection('Usuarios')
+            .doc(uid)
+            .collection('Listas')
+            .doc(widget.idLista)
+            .collection('Productos')
+            .doc(widget.productToEdit['id'])
+            .update({
+          'producto': _productController.text,
+          'sitio': _selectedSite,
+        });
 
-      Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Producto actualizado exitosamente')),
+        );
+
+        Navigator.pop(context);
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al actualizar el producto: $e')),
+        );
+      }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Por favor, complete los campos correctamente')),
@@ -119,6 +148,7 @@ class _EditProductFormState extends State<EditProductForm> {
                         );
                       }).toList(),
                       decoration: InputDecoration(
+                        labelText: 'Seleccionar sitio',
                         border: OutlineInputBorder(),
                       ),
                     ),
@@ -148,7 +178,6 @@ class _EditProductFormState extends State<EditProductForm> {
                 foregroundColor: Colors.white,
               ),
             ),
-            
           ],
         ),
       ],

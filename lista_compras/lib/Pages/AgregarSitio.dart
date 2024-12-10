@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'firebase_services.dart'; // Cambiar el import según tu estructura de archivos
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class NewSitioForm extends StatefulWidget {
   final Function(String) onSiteAdded;
@@ -21,10 +22,28 @@ class _NewSitioFormState extends State<NewSitioForm> {
     return null;
   }
 
+  Future<void> saveData(String siteName, String userId) async {
+    DateTime now = DateTime.now();
+
+    await FirebaseFirestore.instance
+        .collection('Usuarios')
+        .doc(userId)
+        .collection('Sitios')
+        .add({
+      'nombre_sitio': siteName,
+      'fecha': now,
+    });
+
+    print('Datos enviados a Firestore');
+  }
+
   void _saveSite() {
     if (_formKey.currentState!.validate()) {
       String newSiteName = siteNameController.text;
-      saveData(newSiteName); // Guardar el dato usando tu lógica
+      String userId = FirebaseAuth.instance.currentUser!.uid;
+
+      print('Datos para guardar: $newSiteName, $userId'); // Debug
+      saveData(newSiteName, userId); // Guardar el dato usando tu lógica
       widget.onSiteAdded(newSiteName); // Pasar el nombre del sitio al callback
       Navigator.pop(context); // Cerrar el diálogo
       siteNameController.clear(); // Limpiar el campo de texto
