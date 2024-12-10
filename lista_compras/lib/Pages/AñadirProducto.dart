@@ -25,52 +25,58 @@ class _NewProductFormState extends State<NewProductForm> {
   }
 
   // Cargar los sitios para el usuario autenticado
-void _loadSites() async {
-  try {
-    String uid = FirebaseAuth.instance.currentUser!.uid; // UID del usuario actual
-    QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-        .collection('Usuarios')
-        .doc(uid)
-        .collection('Sitios')
-        .get();
+  void _loadSites() async {
+    try {
+      String uid =
+          FirebaseAuth.instance.currentUser!.uid; // UID del usuario actual
+      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+          .collection('Usuarios')
+          .doc(uid)
+          .collection('Sitios')
+          .get();
 
-    // Asegúrate de usar el nombre correcto del campo
-    List<String> sitios = querySnapshot.docs.map((doc) {
-      return doc['nombre_sitio'] as String; // Cambia a 'nombre_sitio' si es el campo correcto
-    }).toList();
+      // Asegúrate de usar el nombre correcto del campo
+      List<String> sitios = querySnapshot.docs.map((doc) {
+        return doc['nombre_sitio']
+            as String; // Cambia a 'nombre_sitio' si es el campo correcto
+      }).toList();
 
-    // Eliminar duplicados si existen
-    setState(() {
-      _sites = sitios.toSet().toList();
-    });
-  } catch (e) {
-    print('Error al cargar los sitios: $e');
+      // Eliminar duplicados si existen
+      setState(() {
+        _sites = sitios.toSet().toList();
+      });
+    } catch (e) {
+      print('Error al cargar los sitios: $e');
+    }
   }
-}
-
-
 
   // Añadir un nuevo sitio a la lista local y la base de datos
-void _addSiteToList(String newSiteName) {
-  setState(() {
-    if (!_sites.contains(newSiteName)) {
-      _sites.add(newSiteName);
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('El sitio "$newSiteName" ya existe.')),
-      );
-    }
-  });
-}
+  void _addSiteToList(String newSiteName) {
+    setState(() {
+      if (!_sites.contains(newSiteName)) {
+        _sites.add(newSiteName);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('El sitio "$newSiteName" ya existe.')),
+        );
+      }
+    });
+  }
 
-
-  // Guardar un producto en la base de datos
   void _saveProduct() async {
     if (_formKey.currentState!.validate()) {
+      if (_selectedSite == null || _selectedSite!.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Debe seleccionar un sitio.'),
+        ));
+        return;
+      }
+
       try {
-        String uid = FirebaseAuth.instance.currentUser!.uid; // UID del usuario actual
+        String uid =
+            FirebaseAuth.instance.currentUser!.uid; // UID del usuario actual
         String productName = _productController.text;
-        String siteName = _selectedSite ?? '';
+        String siteName = _selectedSite!;
 
         await FirebaseFirestore.instance
             .collection('Usuarios')
@@ -104,7 +110,8 @@ void _addSiteToList(String newSiteName) {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: MediaQuery.of(context).size.width * 0.8, // 80% del ancho de la pantalla
+      width: MediaQuery.of(context).size.width *
+          0.8, // 80% del ancho de la pantalla
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -170,7 +177,9 @@ void _addSiteToList(String newSiteName) {
                 const SizedBox(height: 16.0),
                 DropdownButtonFormField<String>(
                   menuMaxHeight: 150,
-                  value: _sites.contains(_selectedSite) ? _selectedSite : null, // Validar que el valor seleccionado sea válido
+                  value: _sites.contains(_selectedSite)
+                      ? _selectedSite
+                      : null, // Validar que el valor seleccionado sea válido
                   onChanged: (String? newValue) {
                     setState(() {
                       _selectedSite = newValue;
@@ -181,13 +190,18 @@ void _addSiteToList(String newSiteName) {
                       value: site,
                       child: Text(site),
                     );
-                  }).toList(), 
+                  }).toList(),
                   decoration: InputDecoration(
                     labelText: 'Seleccionar sitio',
                     border: OutlineInputBorder(),
                   ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Debe seleccionar un sitio';
+                    }
+                    return null;
+                  },
                 ),
-
                 SizedBox(height: 16.0),
                 ElevatedButton.icon(
                   onPressed: () {
